@@ -1,11 +1,10 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { Thing } from '../src';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { ChonkyIconName } from 'chonky';
+import { ChonkyIconFA } from '../src';
 
-describe('it', () => {
+describe('ChonkyIconFA', () => {
   it('renders without crashing', () => {
-    const div = document.createElement('div');
-    ReactDOM.render(<Thing />, div);
-    ReactDOM.unmountComponentAtNode(div);
+    render(<ChonkyIconFA icon={ChonkyIconName.file} />);
   });
 });

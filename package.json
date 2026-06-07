@@ -1,18 +1,28 @@
 {
-  "name": "root",
+  "name": "@numeracode/whimsy-file-browser-workspace",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/chonky",
+    "packages/chonky-icon-fontawesome"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace chonky && npm run build --workspace chonky-icon-fontawesome",
+    "clean": "npm run clean --workspaces --if-present",
+    "lint": "npm run typecheck",
+    "test": "npm run build --workspace chonky && npm run test --workspace chonky && npm run test --workspace chonky-icon-fontawesome",
+    "typecheck": "npm run typecheck --workspace chonky && npm run build --workspace chonky && npm run typecheck --workspace chonky-icon-fontawesome"
+  },
   "devDependencies": {
-    "lerna": "^3.22.1"
+    "@vitejs/plugin-react": "^6.0.2",
+    "jsdom": "^29.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.8"
   },
-  "homepage": "https://chonky.io/",
+  "homepage": "https://github.com/Numeracode/whimsy-file-browser",
   "author": {
-    "name": "Timur Kuzhagaliyev",
-    "email": "tim.kuzh@gmail.com",
-    "url": "https://foxypanda.me/"
-  },
-  "resolutions": {
-    "**/typescript": "4.2.2",
-    "**/immer": "8.0.4"
+    "name": "Numeracode",
+    "url": "https://github.com/Numeracode"
   }
 }
