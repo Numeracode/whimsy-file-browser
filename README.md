@@ -36,6 +36,32 @@
     <br />
 </p>
 
+## Numeracode Maintenance Fork
+
+This is Numeracode's public maintenance fork of Chonky for the Whimsy file-browser
+extraction arc. The immediate goal is to keep the hardened Chonky browser model in a
+separate package lane while we modernize the toolchain, React compatibility, styling,
+tree picker, and preview integrations outside the main Whimsy app.
+
+- Public repo: <https://github.com/Numeracode/whimsy-file-browser>
+- Project board: <https://github.com/orgs/Numeracode/projects/1>
+- Upstream project: <https://github.com/TimboKZ/Chonky>
+
+Current maintenance baseline:
+
+```bash
+npm ci
+npm run typecheck
+npm test
+npm run build
+```
+
+Known follow-up work is tracked on the project board. The first runtime-dependency
+cutover is M2, which removes or isolates the remaining MUI v4 and old FontAwesome
+wrappers before raising the consumer React peer range.
+
+## Upstream Chonky
+
 Chonky is a file browser component for React. It tries to recreate the native file
 browsing experience in your browser. This means your users can make selections, drag
 & drop files, toggle between _List_ and _Grid_ file views, use keyboard shortcuts, and
@@ -43,8 +69,8 @@ much more!
 
 ### [Click here for documentation and examples.](https://chonky.io/)
 
-> Please [create an issue](https://github.com/TimboKZ/Chonky/issues) if you have a
-> problem or want to request a feature.
+> Please use the Numeracode issue tracker for this fork:
+> <https://github.com/Numeracode/whimsy-file-browser/issues>.
 
 ## Preview
 

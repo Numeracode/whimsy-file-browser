@@ -4,7 +4,7 @@ import { FileData } from '../types/file.types';
 import { Logger } from './logger';
 
 export class FileHelper {
-    public static isDirectory(file: Nullable<FileData>): file is FileData {
+    public static isDirectory(file: Nullable<FileData>): boolean {
         // Not a directory by default
         return !!file && file.isDir === true;
     }
@@ -69,8 +69,9 @@ export class FileHelper {
             try {
                 return new Date(maybeDate);
             } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
                 Logger.error(
-                    `Could not convert provided string/number into a date: ${error.message} `,
+                    `Could not convert provided string/number into a date: ${message} `,
                     'Invalid value:',
                     maybeDate
                 );
