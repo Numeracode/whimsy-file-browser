@@ -192,20 +192,42 @@ const stylesheetRefs = new Map<string, number>();
 function camelToKebab(key: string): string {
     const result = key.replace(/([A-Z])/g, '-$1').toLowerCase();
     // Fix vendor prefixes: `webkit` → `-webkit`, `ms` → `-ms`, etc.
-    if (result.startsWith('-webkit')) return `-${result}`;
-    if (result.startsWith('-ms')) return `-${result}`;
-    if (result.startsWith('-moz')) return `-${result}`;
+    if (result.startsWith('webkit-')) return `-${result}`;
+    if (result.startsWith('ms-')) return `-${result}`;
+    if (result.startsWith('moz-')) return `-${result}`;
     return result;
 }
 
-function resolveCSSValue(value: any): string {
-    if (typeof value === 'number') return `${value}px`;
+const unitlessCSSProperties = new Set([
+    'animationIterationCount',
+    'borderImageOutset',
+    'borderImageSlice',
+    'borderImageWidth',
+    'columnCount',
+    'flex',
+    'flexGrow',
+    'flexShrink',
+    'fontWeight',
+    'lineHeight',
+    'opacity',
+    'order',
+    'orphans',
+    'tabSize',
+    'widows',
+    'zIndex',
+    'zoom',
+]);
+
+function resolveCSSValue(value: any, key?: string): string {
+    if (typeof value === 'number') {
+        return key && unitlessCSSProperties.has(key) ? String(value) : `${value}px`;
+    }
     if (Array.isArray(value)) {
         // The `important()` helper wraps in an array with '!important' marker
         if (value.length === 2 && value[1] === '!important') {
-            return `${resolveCSSValue(value[0])} !important`;
+            return `${resolveCSSValue(value[0], key)} !important`;
         }
-        return value.map((v) => resolveCSSValue(v)).join(' ');
+        return value.map((v) => resolveCSSValue(v, key)).join(' ');
     }
     return String(value);
 }
@@ -216,9 +238,9 @@ function resolveCSSValue(value: any): string {
 function propToCSS(key: string, value: any, dynamic?: any): string {
     const cssKey = camelToKebab(key);
     if (typeof value === 'function') {
-        return `${cssKey}: ${resolveCSSValue(value(dynamic))};`;
+        return `${cssKey}: ${resolveCSSValue(value(dynamic), key)};`;
     }
-    return `${cssKey}: ${resolveCSSValue(value)};`;
+    return `${cssKey}: ${resolveCSSValue(value, key)};`;
 }
 
 function isNestedStyle(value: any): value is Record<string, any> {
@@ -441,6 +463,7 @@ export const makeGlobalChonkyStyles = (
     makeStyles: (theme: ChonkyTheme) => any
 ): ((...args: any[]) => Record<string, string>) => {
     const componentId = globalStyleCounter++;
+    const prefix = `ch-global-${componentId}`;
 
     // Build selector mapping once (static)
     // We need a closure around the factory to inspect keys
@@ -455,11 +478,13 @@ export const makeGlobalChonkyStyles = (
         const classes: Record<string, string> = {};
 
         for (const localSelector of Object.keys(localStyles)) {
-            const globalSelector = `chonky-${localSelector}`;
+            const globalSelector = `${prefix}-${localSelector}`;
             classes[localSelector] = globalSelector;
-            const selDef = localStyles[localSelector];
-            // Generate: `.chonky-XXX { ... }` directly
-            cssParts.push(styleObjToCSS(`.${globalSelector}`, selDef, dynamic));
+            cssParts.push(styleObjToCSS(
+                `.${globalSelector}`,
+                localStyles[localSelector],
+                dynamic
+            ));
         }
 
         const css = cssParts.join('\n');

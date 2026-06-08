@@ -25,31 +25,24 @@ export interface ToolbarDropdownButtonProps {
 }
 
 export const ToolbarDropdownButton = React.forwardRef(
-    (props: ToolbarDropdownButtonProps, ref: React.Ref<HTMLDivElement>) => {
+    (props: ToolbarDropdownButtonProps, ref: React.Ref<HTMLButtonElement>) => {
         const { text, active, icon, onClick, disabled } = props;
         const classes = useStyles();
         const ChonkyIcon = useContext(ChonkyIconContext);
-        const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-            if (disabled || !onClick) return;
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onClick();
-            }
-        }, [disabled, onClick]);
 
         const className = c({
             [classes.baseButton]: true,
             [classes.activeButton]: active,
         });
         return (
-            <div
+            <button
+                type="button"
                 ref={ref}
                 className={className}
-                onClick={disabled ? undefined : onClick}
-                onKeyDown={handleKeyDown}
+                onClick={onClick}
                 role="menuitem"
-                tabIndex={disabled ? -1 : 0}
-                aria-disabled={disabled ? true : undefined}
+                disabled={!!disabled}
+                aria-disabled={!!disabled}
                 style={{
                     opacity: disabled ? 0.5 : 1,
                     cursor: disabled ? 'default' : 'pointer',
@@ -61,7 +54,7 @@ export const ToolbarDropdownButton = React.forwardRef(
                     </span>
                 )}
                 <span className={classes.text}>{text}</span>
-            </div>
+            </button>
         );
     }
 );
@@ -73,8 +66,14 @@ const useStyles = makeGlobalChonkyStyles(theme => ({
         minHeight: important('auto'),
         minWidth: important('auto'),
         padding: important(20),
+        backgroundColor: 'transparent',
+        border: 'none',
+        color: 'inherit',
         display: 'flex',
         alignItems: 'center',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        width: '100%',
         whiteSpace: 'nowrap',
         '&:hover': {
             backgroundColor: 'rgba(0,0,0,0.04)',
@@ -101,7 +100,7 @@ export interface SmartToolbarDropdownButtonProps {
 }
 
 export const SmartToolbarDropdownButton = React.forwardRef(
-    (props: SmartToolbarDropdownButtonProps, ref: React.Ref<HTMLDivElement>) => {
+    (props: SmartToolbarDropdownButtonProps, ref: React.Ref<HTMLButtonElement>) => {
         const { fileActionId, onClickFollowUp } = props;
 
         const action = useParamSelector(selectFileActionData, fileActionId);
