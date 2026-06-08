@@ -345,7 +345,7 @@ function injectStylesheet(id: string, css: string) {
     if (!el) {
         el = document.createElement('style');
         el.id = id;
-        el.setAttribute('data-chonky', '');
+        el.dataset.chonky = '';
         document.head.appendChild(el);
     }
     if (el.textContent !== css) {
