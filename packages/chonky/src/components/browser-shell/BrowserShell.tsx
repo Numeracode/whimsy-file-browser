@@ -444,18 +444,20 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
                             viewMode={currentViewMode}
                             onContextMenu={(event) => {
                                 event.preventDefault();
-                                const nextSelection = selectedIdSet.has(item.id)
-                                    ? currentSelection
-                                    : canSelect(item)
-                                      ? makeSelection([item.id], item.id, item.id)
-                                      : makeSelection(currentSelection.selectedIds, item.id, currentSelection.anchorId);
-                                if (!selectedIdSet.has(item.id)) applySelection(nextSelection);
+                                let nextSelection = currentSelection;
+                                if (!selectedIdSet.has(item.id)) {
+                                    nextSelection = canSelect(item)
+                                        ? makeSelection([item.id], item.id, item.id)
+                                        : makeSelection(currentSelection.selectedIds, item.id, currentSelection.anchorId);
+                                    applySelection(nextSelection);
+                                }
                                 setContextMenu({ item, selection: nextSelection, x: event.clientX, y: event.clientY });
                             }}
                             onClick={(event) => handleItemClick(event, item)}
                             onDoubleClick={() => openItem(item)}
                             onOpen={() => openItem(item)}
                             onPreview={() => previewItem(item)}
+                            onToggleSelection={() => toggleSelection(item)}
                         />
                     ))}
                 </div>
@@ -474,7 +476,6 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
                     {renderContextMenu ? renderContextMenu(contextMenuProps) : (
                         <DefaultContextMenu
                             actions={actions}
-                            item={contextMenu.item}
                             selectedCount={selectedItemsForSelection(contextMenu.selection, visibleItems).length}
                             triggerAction={(action) => triggerAction(action, contextMenu.item, contextMenu.selection)}
                         />
@@ -559,7 +560,6 @@ const DefaultToolbar: React.FC<DefaultToolbarProps> = (props) => {
 
 interface DefaultContextMenuProps {
     actions: readonly BrowserAction[];
-    item: BrowserItem;
     selectedCount: number;
     triggerAction: (action: BrowserAction) => void;
 }
@@ -599,10 +599,11 @@ interface BrowserShellItemProps {
     onDoubleClick: () => void;
     onOpen: () => void;
     onPreview: () => void;
+    onToggleSelection: () => void;
 }
 
 const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
-    const { focused, item, onClick, onContextMenu, onDoubleClick, onOpen, onPreview, renderThumbnail, selected, viewMode } = props;
+    const { focused, item, onClick, onContextMenu, onDoubleClick, onOpen, onPreview, onToggleSelection, renderThumbnail, selected, viewMode } = props;
     const disabled = isDisabled(item);
     const thumbnailUrl = getAvailableThumbnail(item);
     const itemStyle = viewMode === 'grid' ? styles.gridItem : styles.listItem;
@@ -616,6 +617,16 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
             onClick={onClick}
             onContextMenu={onContextMenu}
             onDoubleClick={onDoubleClick}
+            onKeyDown={(event) => {
+                if (isInteractiveKeyboardTarget(event.target)) return;
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    onOpen();
+                } else if (event.key === ' ') {
+                    event.preventDefault();
+                    onToggleSelection();
+                }
+            }}
             role={viewMode === 'grid' ? 'gridcell' : 'listitem'}
             style={{
                 ...itemStyle,
@@ -623,6 +634,7 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
                 ...(focused ? styles.focusedItem : null),
                 ...(disabled ? styles.disabledItem : null),
             }}
+            tabIndex={focused ? 0 : -1}
         >
             <div aria-hidden style={viewMode === 'grid' ? styles.gridThumbnail : styles.listThumbnail}>
                 {renderThumbnail ? renderThumbnail(item) : (
