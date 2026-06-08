@@ -7,6 +7,8 @@ import type {
     BrowserOpaqueId,
     BrowserSelection,
 } from './browser-item.types';
+import type { BrowserFileOperationEvent } from './browser-operation.types';
+import type { BrowserTransferIntent } from './browser-transfer.types';
 
 export type BrowserViewMode = 'list' | 'grid';
 export type BrowserSortKey = 'name' | 'kind' | 'sizeBytes' | 'modifiedAt';
@@ -73,6 +75,8 @@ export interface BrowserShellProps {
     onPreview?: (event: BrowserShellItemEvent) => void;
     onNavigateFolder?: (event: BrowserShellNavigateEvent) => void;
     onAction?: (event: BrowserShellActionEvent) => void;
+    onFileOperation?: (event: BrowserFileOperationEvent) => void;
+    onTransferIntent?: (event: BrowserTransferIntent) => void;
     renderToolbar?: (props: BrowserShellToolbarRenderProps) => ReactNode;
     renderContextMenu?: (props: BrowserShellContextMenuRenderProps) => ReactNode;
     renderThumbnail?: (item: BrowserItem) => ReactNode;

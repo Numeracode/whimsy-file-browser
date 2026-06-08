@@ -161,10 +161,23 @@ export interface BrowserFolderChainItem {
 export type BrowserActionPlacement = 'toolbar' | 'context-menu' | 'row' | 'selection-bar';
 export type BrowserActionTone = 'default' | 'primary' | 'destructive';
 export type BrowserActionSelectionScope = 'none' | 'single' | 'multiple' | 'any';
+export type BrowserFileOperationKind =
+    | 'open'
+    | 'preview'
+    | 'download'
+    | 'rename'
+    | 'delete'
+    | 'favorite'
+    | 'copy'
+    | 'move'
+    | 'paste'
+    | 'new-folder'
+    | 'upload';
 
 export interface BrowserAction {
     id: string;
     label: string;
+    operation?: BrowserFileOperationKind;
     icon?: string;
     placement?: readonly BrowserActionPlacement[];
     tone?: BrowserActionTone;

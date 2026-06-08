@@ -8,6 +8,7 @@ export { FileList } from './components/file-list/FileList';
 export { FileContextMenu } from './components/external/FileContextMenu';
 export { FullFileBrowser } from './components/external/FullFileBrowser';
 export { BrowserShell } from './components/browser-shell/BrowserShell';
+export { BrowserDestinationPicker, BrowserFolderTree } from './components/tree/BrowserFolderTree';
 export { FilePreviewer, defaultPreviewRenderers } from './components/preview/FilePreviewer';
 export { MediaLightbox } from './components/preview/MediaLightbox';
 export { PreviewFallback } from './components/preview/PreviewFallback';
@@ -41,6 +42,7 @@ export type {
     BrowserActionPlacement,
     BrowserActionSelectionScope,
     BrowserActionTone,
+    BrowserFileOperationKind,
     BrowserFolderChainItem,
     BrowserItem,
     BrowserItemCapabilities,
@@ -73,6 +75,38 @@ export type {
     BrowserViewMode,
 } from './types/browser-shell.types';
 export type {
+    BrowserFileOperationEvent,
+} from './types/browser-operation.types';
+export type {
+    BrowserDestinationPickerProps,
+    BrowserFolderChildrenLoader,
+    BrowserFolderExpansionEvent,
+    BrowserFolderSelectionEvent,
+    BrowserFolderTreeNode,
+    BrowserFolderTreeProps,
+} from './types/browser-tree.types';
+export type {
+    BrowserDropTargetKind,
+    BrowserTransferDropSnapshot,
+    BrowserTransferIntent,
+    BrowserTransferModifierState,
+    BrowserTransferOperation,
+    BrowserTransferSourceSnapshot,
+    BrowserTransferTarget,
+} from './types/browser-transfer.types';
+export {
+    BROWSER_FILE_OPERATION_ACTIONS,
+    createBrowserFileOperationEvent,
+    fileOperationForAction,
+    isBrowserActionEnabled,
+    isSelectionScopeSatisfied,
+    selectedItemsForOperation,
+} from './util/browser-file-operations';
+export {
+    createBrowserTransferIntent,
+    resolveBrowserTransferOperation,
+} from './util/browser-transfer';
+export type {
     AvailableBrowserPreviewAsset,
     FilePreviewerProps,
     LazyPreviewRenderer,
@@ -95,6 +129,10 @@ export {
     browserSelectionFixture,
     browserSourceFixtures,
 } from './fixtures/browser-items';
+export {
+    browserFolderTreeFixtures,
+    lazyBrowserFolderChildrenFixtures,
+} from './fixtures/browser-tree';
 export {
     adaptBrowserFolderChainToFileArray,
     adaptBrowserItemToFileData,

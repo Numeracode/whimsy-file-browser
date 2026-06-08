@@ -276,6 +276,7 @@ describe('BrowserShell', () => {
 
     it('preserves multi-selection when opening a context menu on an already selected item', () => {
         const onAction = vi.fn();
+        const onFileOperation = vi.fn();
         const selection: BrowserSelection = {
             selectedIds: ['image:hero', 'pdf:contract'].map(createBrowserOpaqueId),
             focusedId: createBrowserOpaqueId('pdf:contract'),
@@ -287,6 +288,7 @@ describe('BrowserShell', () => {
                 actions={browserActionFixtures}
                 items={browserItemFixtures}
                 onAction={onAction}
+                onFileOperation={onFileOperation}
                 selection={selection}
             />
         );
@@ -304,10 +306,22 @@ describe('BrowserShell', () => {
                 selection: expect.objectContaining({ selectedIds: ['image:hero', 'pdf:contract'] }),
             })
         );
+        expect(onFileOperation).toHaveBeenCalledWith(
+            expect.objectContaining({
+                operation: 'download',
+                actionId: 'download',
+                selectedIds: expect.arrayContaining(['image:hero', 'pdf:contract']),
+                selectedItems: expect.arrayContaining([
+                    expect.objectContaining({ id: 'image:hero' }),
+                    expect.objectContaining({ id: 'pdf:contract' }),
+                ]),
+            })
+        );
     });
 
     it('uses the pending context-menu selection before controlled selection state updates', () => {
         const onAction = vi.fn();
+        const onFileOperation = vi.fn();
         const onSelectionChange = vi.fn();
         const selection: BrowserSelection = {
             selectedIds: [],
@@ -318,6 +332,7 @@ describe('BrowserShell', () => {
                 actions={browserActionFixtures}
                 items={browserItemFixtures}
                 onAction={onAction}
+                onFileOperation={onFileOperation}
                 onSelectionChange={onSelectionChange}
                 selection={selection}
             />
@@ -336,5 +351,68 @@ describe('BrowserShell', () => {
                 selection: expect.objectContaining({ selectedIds: ['image:hero'] }),
             })
         );
+        expect(onFileOperation).toHaveBeenCalledWith(
+            expect.objectContaining({
+                operation: 'open',
+                itemId: 'image:hero',
+                selectedIds: ['image:hero'],
+            })
+        );
+    });
+
+    it('does not emit typed operations when item capabilities disallow the operation', () => {
+        const onAction = vi.fn();
+        const onFileOperation = vi.fn();
+        const readOnlyItem: BrowserItem = {
+            ...browserItemFixtures.find((item) => item.id === 'image:hero')!,
+            id: createBrowserOpaqueId('readonly:image'),
+            name: 'readonly.jpg',
+            capabilities: {
+                open: true,
+                preview: true,
+                select: true,
+                download: true,
+                delete: false,
+            },
+        };
+
+        render(
+            <BrowserShell
+                actions={browserActionFixtures}
+                defaultSelection={{ selectedIds: [readOnlyItem.id], focusedId: readOnlyItem.id }}
+                items={[readOnlyItem]}
+                onAction={onAction}
+                onFileOperation={onFileOperation}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Delete'));
+
+        expect(onAction).not.toHaveBeenCalled();
+        expect(onFileOperation).not.toHaveBeenCalled();
+    });
+
+    it('exposes DnD transfer affordances only when the host handles transfer intents', () => {
+        const { rerender } = render(
+            <BrowserShell
+                folderChain={browserFolderChainFixtures}
+                items={browserItemFixtures}
+            />
+        );
+
+        expect(screen.getByText('hero-photo.jpg').closest('[data-testid="browser-item"]')?.getAttribute('data-dnd-draggable')).toBe('false');
+        expect(screen.getByLabelText('Files').getAttribute('data-dnd-droppable')).toBe('false');
+
+        rerender(
+            <BrowserShell
+                folderChain={browserFolderChainFixtures}
+                items={browserItemFixtures}
+                onTransferIntent={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('hero-photo.jpg').closest('[data-testid="browser-item"]')?.getAttribute('data-dnd-draggable')).toBe('true');
+        expect(screen.getByText('Brand assets').closest('[data-testid="browser-item"]')?.getAttribute('data-dnd-droppable')).toBe('true');
+        expect(screen.getByLabelText('Files').getAttribute('data-dnd-droppable')).toBe('true');
     });
 });

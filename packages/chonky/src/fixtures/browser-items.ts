@@ -14,6 +14,7 @@ import type {
     BrowserSourceDescriptor,
     PreviewDescriptor,
 } from '../types/browser-item.types';
+import { BROWSER_FILE_OPERATION_ACTIONS } from '../util/browser-file-operations';
 
 const PREVIEW_ORIGIN = 'https://preview.example.test';
 
@@ -64,6 +65,7 @@ const folderCapabilities: BrowserItemCapabilities = {
     drag: true,
     drop: true,
     rename: true,
+    delete: true,
 };
 
 const previewableFileCapabilities: BrowserItemCapabilities = {
@@ -72,6 +74,9 @@ const previewableFileCapabilities: BrowserItemCapabilities = {
     select: true,
     drag: true,
     download: true,
+    rename: true,
+    delete: true,
+    favorite: true,
 };
 
 const unavailablePreviewFileCapabilities: BrowserItemCapabilities = {
@@ -152,37 +157,7 @@ const remoteFile = (
     id: opaqueId(item.id),
 });
 
-export const browserActionFixtures: readonly BrowserAction[] = [
-    {
-        id: 'open',
-        label: 'Open',
-        icon: 'open',
-        placement: ['context-menu', 'row'],
-        selectionScope: 'single',
-    },
-    {
-        id: 'download',
-        label: 'Download',
-        icon: 'download',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'any',
-    },
-    {
-        id: 'delete',
-        label: 'Delete',
-        icon: 'trash',
-        placement: ['context-menu'],
-        selectionScope: 'any',
-        tone: 'destructive',
-    },
-    {
-        id: 'restore-preview',
-        label: 'Refresh preview',
-        icon: 'refresh',
-        placement: ['row', 'context-menu'],
-        selectionScope: 'single',
-    },
-];
+export const browserActionFixtures: readonly BrowserAction[] = BROWSER_FILE_OPERATION_ACTIONS;
 
 export const browserFolderChainFixtures: readonly BrowserFolderChainItem[] = [
     {
@@ -364,7 +339,13 @@ export const browserItemFixtures: readonly BrowserItem[] = [
             thumbnail: unavailableAsset('thumbnail', 'expired', 'Thumbnail URL expired', true),
             preview: unavailableAsset('preview', 'expired', 'Preview URL expired', true),
         }),
-        actions: [browserActionFixtures[3]],
+        actions: [{
+            id: 'restore-preview',
+            label: 'Refresh preview',
+            icon: 'refresh',
+            placement: ['row', 'context-menu'],
+            selectionScope: 'single',
+        }],
         capabilities: previewableFileCapabilities,
     }),
     catalogFile({
