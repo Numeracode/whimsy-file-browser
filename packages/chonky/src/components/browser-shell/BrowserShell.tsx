@@ -467,15 +467,16 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     }, [contextMenu]);
 
     useEffect(() => {
-        if (!activeTransferSource || typeof window === 'undefined') return undefined;
+        if (!activeTransferSource || typeof globalThis.window === 'undefined') return undefined;
+        const browserWindow = globalThis.window;
         const updateModifierState = (event: globalThis.KeyboardEvent) => {
             modifierStateRef.current = modifierStateFromKeyboardEvent(event);
         };
-        window.addEventListener('keydown', updateModifierState);
-        window.addEventListener('keyup', updateModifierState);
+        browserWindow.addEventListener('keydown', updateModifierState);
+        browserWindow.addEventListener('keyup', updateModifierState);
         return () => {
-            window.removeEventListener('keydown', updateModifierState);
-            window.removeEventListener('keyup', updateModifierState);
+            browserWindow.removeEventListener('keydown', updateModifierState);
+            browserWindow.removeEventListener('keyup', updateModifierState);
         };
     }, [activeTransferSource]);
 

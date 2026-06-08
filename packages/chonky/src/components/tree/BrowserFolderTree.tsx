@@ -47,6 +47,11 @@ const hasExpandableChildren = (node: BrowserFolderTreeNode): boolean =>
 
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : 'Failed to load folders';
 
+const getExpanderIcon = (expandable: boolean, expanded: boolean): string => {
+    if (!expandable) return '•';
+    return expanded ? '▾' : '▸';
+};
+
 export const BrowserFolderTree: React.FC<BrowserFolderTreeProps> = React.memo((props) => {
     const {
         className,
@@ -168,7 +173,7 @@ export const BrowserFolderTree: React.FC<BrowserFolderTreeProps> = React.memo((p
                         style={styles.expander}
                         type="button"
                     >
-                        {expandable ? (expanded ? '▾' : '▸') : '•'}
+                        {getExpanderIcon(expandable, expanded)}
                     </button>
                     <button
                         disabled={node.disabled}

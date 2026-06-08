@@ -10,6 +10,7 @@ export const resolveBrowserTransferOperation = (
     modifiers: BrowserTransferModifierState,
     defaultOperation: BrowserTransferOperation = 'move'
 ): BrowserTransferOperation => {
+    // Copy modifiers take precedence when combined with Shift; otherwise Shift forces move and unset modifiers use the host default.
     if (modifiers.ctrlKey || modifiers.metaKey) return 'copy';
     if (modifiers.shiftKey) return 'move';
     return defaultOperation;

@@ -400,8 +400,8 @@ describe('BrowserShell', () => {
             />
         );
 
-        expect(screen.getByText('hero-photo.jpg').closest('[data-testid="browser-item"]')?.getAttribute('data-dnd-draggable')).toBe('false');
-        expect(screen.getByLabelText('Files').getAttribute('data-dnd-droppable')).toBe('false');
+        expect((screen.getByText('hero-photo.jpg').closest('[data-testid="browser-item"]') as HTMLElement | null)?.dataset.dndDraggable).toBe('false');
+        expect(screen.getByLabelText('Files').dataset.dndDroppable).toBe('false');
 
         rerender(
             <BrowserShell
@@ -411,8 +411,8 @@ describe('BrowserShell', () => {
             />
         );
 
-        expect(screen.getByText('hero-photo.jpg').closest('[data-testid="browser-item"]')?.getAttribute('data-dnd-draggable')).toBe('true');
-        expect(screen.getByText('Brand assets').closest('[data-testid="browser-item"]')?.getAttribute('data-dnd-droppable')).toBe('true');
-        expect(screen.getByLabelText('Files').getAttribute('data-dnd-droppable')).toBe('true');
+        expect((screen.getByText('hero-photo.jpg').closest('[data-testid="browser-item"]') as HTMLElement | null)?.dataset.dndDraggable).toBe('true');
+        expect((screen.getByText('Brand assets').closest('[data-testid="browser-item"]') as HTMLElement | null)?.dataset.dndDroppable).toBe('true');
+        expect(screen.getByLabelText('Files').dataset.dndDroppable).toBe('true');
     });
 });

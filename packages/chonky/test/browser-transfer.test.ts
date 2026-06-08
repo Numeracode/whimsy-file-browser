@@ -17,7 +17,7 @@ describe('browser transfer intents', () => {
     it('creates an opaque host transfer intent from source and destination snapshots', () => {
         const hero = browserItemFixtures.find((item) => item.id === 'image:hero')!;
         const contract = browserItemFixtures.find((item) => item.id === 'pdf:contract')!;
-        const destination = browserFolderChainFixtures[browserFolderChainFixtures.length - 1];
+        const destination = browserFolderChainFixtures.at(-1)!;
 
         const intent = createBrowserTransferIntent({
             source: {

@@ -66,8 +66,9 @@ describe('BrowserFolderTree', () => {
             .getAllByRole('button')
             .find((button) => button.hasAttribute('disabled'));
 
-        expect(disabledFolderButton).toBeDefined();
-        fireEvent.click(disabledFolderButton!);
+        expect(disabledFolderButton).toBeTruthy();
+        if (!disabledFolderButton) throw new Error('Expected disabled folder button');
+        fireEvent.click(disabledFolderButton);
 
         expect(onSelectedFolderChange).not.toHaveBeenCalled();
     });
