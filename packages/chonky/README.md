@@ -47,13 +47,13 @@ export function MyBrowser() {
 
 ## Provider-agnostic previews
 
-Use `PreviewShell`, `FilePreviewer`, `PreviewTile`, and `MediaLightbox` for new
-preview integrations. The package renders manifests and signed URLs supplied by
-the host app; it does not include Whimsy auth, provider credentials, or signing
-logic.
+Use `PreviewShell`, `FilePreviewer`, `PreviewTile`, and `MediaLightbox` from the
+preview-only subpath for new preview integrations. The package renders
+manifests and signed URLs supplied by the host app; it does not include Whimsy
+auth, provider credentials, or signing logic.
 
 ```tsx
-import { MediaLightbox, PreviewTile } from '@numeracode/whimsy-file-browser';
+import { MediaLightbox, PreviewTile } from '@numeracode/whimsy-file-browser/preview';
 
 export function PreviewExample({ item, open, setOpen }) {
     return (
