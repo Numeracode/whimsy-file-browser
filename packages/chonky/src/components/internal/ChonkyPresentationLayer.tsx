@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { reduxActions } from '../../redux/reducers';
@@ -26,6 +26,7 @@ export const ChonkyPresentationLayer: React.FC<ChonkyPresentationLayerProps> = (
     children,
 }) => {
     const dispatch = useDispatch();
+    const rootRef = useRef<HTMLDivElement | null>(null);
     const fileActionIds = useSelector(selectFileActionIds);
     const dndDisabled = useSelector(selectIsDnDDisabled);
     const clearSelectionOnOutsideClick = useSelector(
@@ -34,14 +35,25 @@ export const ChonkyPresentationLayer: React.FC<ChonkyPresentationLayerProps> = (
 
     // Deal with clicks outside of Chonky
     const handleClickAway = useCallback(
-        (event: React.MouseEvent<Document>) => {
-            if (!clearSelectionOnOutsideClick || elementIsInsideButton(event.target)) {
+        (event: MouseEvent) => {
+            const target = event.target as Node | null;
+            if (
+                !clearSelectionOnOutsideClick ||
+                !rootRef.current ||
+                (target && rootRef.current.contains(target)) ||
+                elementIsInsideButton(event.target)
+            ) {
                 return;
             }
             dispatch(reduxActions.clearSelection());
         },
         [dispatch, clearSelectionOnOutsideClick]
     );
+
+    useEffect(() => {
+        document.addEventListener('click', handleClickAway, true);
+        return () => document.removeEventListener('click', handleClickAway, true);
+    }, [handleClickAway]);
 
     // Generate necessary components
     const hotkeyListenerComponents = useMemo(
@@ -70,10 +82,10 @@ export const ChonkyPresentationLayer: React.FC<ChonkyPresentationLayerProps> = (
 
     return (
         <div
+            ref={rootRef}
             className={classes.chonkyRoot}
             style={rootStyle}
             onContextMenu={showContextMenu}
-            onClick={handleClickAway as any}
         >
             {!dndDisabled && dndContextAvailable && <DnDFileListDragLayer />}
             {hotkeyListenerComponents}
