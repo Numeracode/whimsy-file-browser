@@ -94,30 +94,30 @@ const remoteRef = (sourceId: BrowserOpaqueId, itemId: string): BrowserItemRef =>
 const previewUrl = (kind: BrowserPreviewAssetKind, fileName: string) =>
     `${PREVIEW_ORIGIN}/${kind === 'thumbnail' ? 'thumbs' : 'previews'}/${fileName}`;
 
-const availableAsset = (
-    kind: BrowserPreviewAssetKind,
+const availableAsset = <K extends BrowserPreviewAssetKind>(
+    kind: K,
     fileName: string,
     contentType: string
-): BrowserPreviewAsset => ({
+): BrowserPreviewAsset<K> => ({
     status: 'available',
     kind,
     url: previewUrl(kind, fileName),
     contentType,
 });
 
-const pendingAsset = (kind: BrowserPreviewAssetKind, message: string): BrowserPreviewAsset => ({
+const pendingAsset = <K extends BrowserPreviewAssetKind>(kind: K, message: string): BrowserPreviewAsset<K> => ({
     status: 'pending',
     kind,
     message,
     canRetry: true,
 });
 
-const unavailableAsset = (
-    kind: BrowserPreviewAssetKind,
+const unavailableAsset = <K extends BrowserPreviewAssetKind>(
+    kind: K,
     reason: BrowserPreviewUnavailableReason,
     message: string,
     canRetry = false
-): BrowserPreviewAsset => ({
+): BrowserPreviewAsset<K> => ({
     status: 'unavailable',
     kind,
     reason,

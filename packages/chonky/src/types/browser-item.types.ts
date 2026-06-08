@@ -55,23 +55,23 @@ export type BrowserPreviewUnavailableReason =
     | 'provider_unavailable'
     | 'unknown';
 
-export type BrowserPreviewAsset =
+export type BrowserPreviewAsset<K extends BrowserPreviewAssetKind = BrowserPreviewAssetKind> =
     | {
           status: 'available';
-          kind: BrowserPreviewAssetKind;
+          kind: K;
           url: string;
           expiresAt?: string;
           contentType?: string;
       }
     | {
           status: 'pending';
-          kind: BrowserPreviewAssetKind;
+          kind: K;
           message?: string;
           canRetry?: boolean;
       }
     | {
           status: 'unavailable';
-          kind: BrowserPreviewAssetKind;
+          kind: K;
           reason: BrowserPreviewUnavailableReason;
           message?: string;
           canRetry?: boolean;
@@ -79,9 +79,9 @@ export type BrowserPreviewAsset =
 
 export interface PreviewDescriptor {
     renderer: BrowserPreviewRenderer;
-    preview?: BrowserPreviewAsset;
-    thumbnail?: BrowserPreviewAsset;
-    download?: BrowserPreviewAsset;
+    preview?: BrowserPreviewAsset<'preview'>;
+    thumbnail?: BrowserPreviewAsset<'thumbnail'>;
+    download?: BrowserPreviewAsset<'download'>;
 }
 
 export interface BrowserItemCapabilities {
