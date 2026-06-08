@@ -153,6 +153,9 @@ describe('BrowserShell', () => {
         expect(onSelectionChange).toHaveBeenCalledWith(
             expect.objectContaining({ focusedId: 'local:private:backup', selectedIds: [] })
         );
+        const activeDescendant = shell.getAttribute('aria-activedescendant');
+        expect(activeDescendant).toBeTruthy();
+        expect(document.getElementById(activeDescendant!)?.textContent).toContain('backup.zip');
     });
 
     it('allows hosts to replace toolbar, context menu, and thumbnail rendering', () => {

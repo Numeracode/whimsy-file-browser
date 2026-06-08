@@ -18,6 +18,7 @@ import type {
 } from '../../types/browser-shell.types';
 
 const DEFAULT_SORT: BrowserSortState = { key: 'name', direction: 'asc' };
+let browserShellInstanceCounter = 0;
 
 interface ContextMenuState {
     item: BrowserItem;
@@ -118,6 +119,12 @@ const isInteractiveKeyboardTarget = (target: EventTarget | null): boolean => {
     return Boolean(target.closest('button,input,select,textarea,a,[contenteditable="true"],[role="textbox"],[role="combobox"]'));
 };
 
+const toDomIdToken = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '_');
+const createBrowserShellDomId = (): string => {
+    browserShellInstanceCounter += 1;
+    return `browser-shell-${browserShellInstanceCounter}`;
+};
+
 const createActionEvent = (
     action: BrowserAction,
     selection: BrowserSelection,
@@ -170,6 +177,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
         defaultSelection ?? makeSelection([])
     );
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+    const shellId = useMemo(createBrowserShellDomId, []);
 
     const currentViewMode = viewMode ?? internalViewMode;
     const currentSort = sort ?? internalSort;
@@ -181,6 +189,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
         () => visibleItems.findIndex((item) => item.id === currentSelection.focusedId),
         [currentSelection.focusedId, visibleItems]
     );
+    const itemDomId = useCallback((itemId: BrowserOpaqueId) => `${shellId}-item-${toDomIdToken(itemId)}`, [shellId]);
 
     const applyViewMode = useCallback(
         (nextViewMode: BrowserViewMode) => {
@@ -389,6 +398,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
 
     return (
         <div
+            aria-activedescendant={currentSelection.focusedId ? itemDomId(currentSelection.focusedId) : undefined}
             className={className}
             data-testid="browser-shell"
             onKeyDown={handleKeyDown}
@@ -437,6 +447,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
                     {visibleItems.map((item) => (
                         <BrowserShellItem
                             key={item.id}
+                            domId={itemDomId(item.id)}
                             focused={item.id === currentSelection.focusedId}
                             item={item}
                             renderThumbnail={renderThumbnail}
@@ -589,6 +600,7 @@ const DefaultContextMenu: React.FC<DefaultContextMenuProps> = (props) => {
 };
 
 interface BrowserShellItemProps {
+    domId: string;
     focused: boolean;
     item: BrowserItem;
     renderThumbnail?: (item: BrowserItem) => React.ReactNode;
@@ -603,7 +615,7 @@ interface BrowserShellItemProps {
 }
 
 const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
-    const { focused, item, onClick, onContextMenu, onDoubleClick, onOpen, onPreview, onToggleSelection, renderThumbnail, selected, viewMode } = props;
+    const { domId, focused, item, onClick, onContextMenu, onDoubleClick, onOpen, onPreview, onToggleSelection, renderThumbnail, selected, viewMode } = props;
     const disabled = isDisabled(item);
     const thumbnailUrl = getAvailableThumbnail(item);
     const itemStyle = viewMode === 'grid' ? styles.gridItem : styles.listItem;
@@ -614,6 +626,7 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
             aria-selected={selected}
             data-focused={focused ? 'true' : 'false'}
             data-testid="browser-item"
+            id={domId}
             onClick={onClick}
             onContextMenu={onContextMenu}
             onDoubleClick={onDoubleClick}
