@@ -29,6 +29,7 @@ export type FileViewConfig = import('./types/file-view.types').FileViewConfig;
 export type FileViewConfigGrid = import('./types/file-view.types').FileViewConfigGrid;
 export type FileViewConfigList = import('./types/file-view.types').FileViewConfigList;
 export { ThumbnailGenerator } from './types/thumbnails.types';
+export { createBrowserOpaqueId } from './types/browser-item.types';
 export type {
     BrowserAction,
     BrowserActionPlacement,

@@ -1,4 +1,10 @@
-export type BrowserOpaqueId = string;
+export type BrowserOpaqueId = string & { readonly __brand: 'BrowserOpaqueId' };
+
+/**
+ * Marks an adapter-owned string as an opaque browser ID while preserving the
+ * runtime value as a plain serializable string.
+ */
+export const createBrowserOpaqueId = (value: string): BrowserOpaqueId => value as BrowserOpaqueId;
 
 export type BrowserItemKind = 'file' | 'folder';
 

@@ -1,9 +1,11 @@
+import { createBrowserOpaqueId } from '../types/browser-item.types';
 import type {
     BrowserAction,
     BrowserFolderChainItem,
     BrowserItem,
     BrowserItemCapabilities,
     BrowserItemRef,
+    BrowserOpaqueId,
     BrowserPreviewAsset,
     BrowserPreviewAssetKind,
     BrowserPreviewRenderer,
@@ -15,39 +17,40 @@ import type {
 
 const PREVIEW_ORIGIN = 'https://preview.example.test';
 
+const opaqueId = createBrowserOpaqueId;
 const source = (descriptor: BrowserSourceDescriptor): BrowserSourceDescriptor => descriptor;
 
 export const browserSourceFixtures: Readonly<Record<string, BrowserSourceDescriptor>> = {
     privateStorage: source({
-        id: 'source:private',
+        id: opaqueId('source:private'),
         kind: 'private',
         label: 'Private storage',
         iconHint: 'lock',
         pathHint: '/files',
     }),
     localComputer: source({
-        id: 'source:local',
+        id: opaqueId('source:local'),
         kind: 'local',
         label: 'This computer',
         iconHint: 'hard-drive',
         pathHint: '~/Documents',
     }),
     googleDrive: source({
-        id: 'source:remote:gdrive',
+        id: opaqueId('source:remote:gdrive'),
         kind: 'remote',
         label: 'Design Google Drive',
         accountLabel: 'design@example.com',
         iconHint: 'google-drive',
     }),
     dropbox: source({
-        id: 'source:remote:dropbox',
+        id: opaqueId('source:remote:dropbox'),
         kind: 'remote',
         label: 'Marketing Dropbox',
         accountLabel: 'marketing@example.com',
         iconHint: 'dropbox',
     }),
     oneDrive: source({
-        id: 'source:remote:onedrive',
+        id: opaqueId('source:remote:onedrive'),
         kind: 'remote',
         label: 'Finance OneDrive',
         accountLabel: 'finance@example.com',
@@ -76,9 +79,17 @@ const unavailablePreviewFileCapabilities: BrowserItemCapabilities = {
     preview: false,
 };
 
-const catalogRef = (itemId: string): BrowserItemRef => ({ kind: 'catalog', itemId });
-const localRef = (sourceId: string, itemId: string): BrowserItemRef => ({ kind: 'local', sourceId, itemId });
-const remoteRef = (sourceId: string, itemId: string): BrowserItemRef => ({ kind: 'remote', sourceId, itemId });
+const catalogRef = (itemId: string): BrowserItemRef => ({ kind: 'catalog', itemId: opaqueId(itemId) });
+const localRef = (sourceId: BrowserOpaqueId, itemId: string): BrowserItemRef => ({
+    kind: 'local',
+    sourceId,
+    itemId: opaqueId(itemId),
+});
+const remoteRef = (sourceId: BrowserOpaqueId, itemId: string): BrowserItemRef => ({
+    kind: 'remote',
+    sourceId,
+    itemId: opaqueId(itemId),
+});
 
 const previewUrl = (kind: BrowserPreviewAssetKind, fileName: string) =>
     `${PREVIEW_ORIGIN}/${kind === 'thumbnail' ? 'thumbs' : 'previews'}/${fileName}`;
@@ -119,24 +130,26 @@ const previewDescriptor = (
     assets: Omit<PreviewDescriptor, 'renderer'>
 ): PreviewDescriptor => ({ renderer, ...assets });
 
-const catalogFile = (item: Omit<BrowserItem, 'kind' | 'ref' | 'source'>): BrowserItem => ({
+const catalogFile = (item: Omit<BrowserItem, 'kind' | 'ref' | 'source' | 'id'> & { id: string }): BrowserItem => ({
     kind: 'file',
     ref: catalogRef(item.id),
     source: browserSourceFixtures.privateStorage,
     capabilities: previewableFileCapabilities,
     ...item,
+    id: opaqueId(item.id),
 });
 
 const remoteFile = (
     sourceDescriptor: BrowserSourceDescriptor,
     providerItemId: string,
-    item: Omit<BrowserItem, 'kind' | 'ref' | 'source'>
+    item: Omit<BrowserItem, 'kind' | 'ref' | 'source' | 'id'> & { id: string }
 ): BrowserItem => ({
     kind: 'file',
     ref: remoteRef(sourceDescriptor.id, providerItemId),
     source: sourceDescriptor,
     capabilities: previewableFileCapabilities,
     ...item,
+    id: opaqueId(item.id),
 });
 
 export const browserActionFixtures: readonly BrowserAction[] = [
@@ -173,19 +186,19 @@ export const browserActionFixtures: readonly BrowserAction[] = [
 
 export const browserFolderChainFixtures: readonly BrowserFolderChainItem[] = [
     {
-        id: 'folder:root',
+        id: opaqueId('folder:root'),
         name: 'All files',
         ref: catalogRef('folder:root'),
         source: browserSourceFixtures.privateStorage,
     },
     {
-        id: 'folder:projects',
+        id: opaqueId('folder:projects'),
         name: 'Projects',
         ref: catalogRef('folder:projects'),
         source: browserSourceFixtures.privateStorage,
     },
     {
-        id: 'remote:gdrive:folder:campaign',
+        id: opaqueId('remote:gdrive:folder:campaign'),
         name: 'Campaign',
         ref: remoteRef(browserSourceFixtures.googleDrive.id, 'opaque-provider-folder-id'),
         source: browserSourceFixtures.googleDrive,
@@ -194,7 +207,7 @@ export const browserFolderChainFixtures: readonly BrowserFolderChainItem[] = [
 
 export const browserItemFixtures: readonly BrowserItem[] = [
     {
-        id: 'folder:brand-assets',
+        id: opaqueId('folder:brand-assets'),
         kind: 'folder',
         name: 'Brand assets',
         ref: catalogRef('folder:brand-assets'),
@@ -298,7 +311,7 @@ export const browserItemFixtures: readonly BrowserItem[] = [
         }),
     }),
     {
-        id: 'local:private:backup',
+        id: opaqueId('local:private:backup'),
         kind: 'file',
         name: 'backup.zip',
         ref: localRef(browserSourceFixtures.localComputer.id, 'opaque-local-file-id'),
@@ -346,7 +359,7 @@ export const browserItemFixtures: readonly BrowserItem[] = [
 ];
 
 export const browserSelectionFixture: BrowserSelection = {
-    selectedIds: ['image:hero', 'video:walkthrough'],
-    focusedId: 'video:walkthrough',
-    anchorId: 'image:hero',
+    selectedIds: [opaqueId('image:hero'), opaqueId('video:walkthrough')],
+    focusedId: opaqueId('video:walkthrough'),
+    anchorId: opaqueId('image:hero'),
 };
