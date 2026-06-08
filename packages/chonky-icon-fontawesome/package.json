@@ -22,7 +22,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --sourcemap --clean --external react --external react-dom --external chonky",
+    "build": "tsup src/index.ts --format cjs,esm --dts --dts-resolve --sourcemap --clean --external react --external react-dom --external chonky",
     "clean": "rm -rf dist",
     "dev": "tsup src/index.ts --format cjs,esm --dts --sourcemap --watch --external react --external react-dom --external chonky",
     "lint": "npm run typecheck",

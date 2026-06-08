@@ -29,6 +29,36 @@ export type FileViewConfig = import('./types/file-view.types').FileViewConfig;
 export type FileViewConfigGrid = import('./types/file-view.types').FileViewConfigGrid;
 export type FileViewConfigList = import('./types/file-view.types').FileViewConfigList;
 export { ThumbnailGenerator } from './types/thumbnails.types';
+export { createBrowserOpaqueId } from './types/browser-item.types';
+export type {
+    BrowserAction,
+    BrowserActionPlacement,
+    BrowserActionSelectionScope,
+    BrowserActionTone,
+    BrowserFolderChainItem,
+    BrowserItem,
+    BrowserItemCapabilities,
+    BrowserItemFlags,
+    BrowserItemKind,
+    BrowserItemRef,
+    BrowserMetadataValue,
+    BrowserOpaqueId,
+    BrowserPreviewAsset,
+    BrowserPreviewAssetKind,
+    BrowserPreviewRenderer,
+    BrowserPreviewUnavailableReason,
+    BrowserSelection,
+    BrowserSourceDescriptor,
+    BrowserSourceKind,
+    PreviewDescriptor,
+} from './types/browser-item.types';
+export {
+    browserActionFixtures,
+    browserFolderChainFixtures,
+    browserItemFixtures,
+    browserSelectionFixture,
+    browserSourceFixtures,
+} from './fixtures/browser-items';
 
 export { I18nConfig, ChonkyFormatters } from './types/i18n.types';
 export { defaultFormatters, getI18nId, getActionI18nId, I18nNamespace } from './util/i18n';
