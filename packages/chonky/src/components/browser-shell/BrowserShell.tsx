@@ -472,6 +472,9 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
         const updateModifierState = (event: globalThis.KeyboardEvent) => {
             modifierStateRef.current = modifierStateFromKeyboardEvent(event);
         };
+        // Browsers do not expose already-held modifier keys globally; seed a
+        // neutral browser event before live key events take over.
+        modifierStateRef.current = modifierStateFromKeyboardEvent(new browserWindow.KeyboardEvent('keydown'));
         browserWindow.addEventListener('keydown', updateModifierState);
         browserWindow.addEventListener('keyup', updateModifierState);
         return () => {
