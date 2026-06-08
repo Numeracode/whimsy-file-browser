@@ -38,6 +38,7 @@ export const getBrowserItemThumbnailUrl = (item: BrowserItem): string | null => 
 export const adaptBrowserItemToFileData = (item: BrowserItem): BrowserItemFileData => {
     const primaryPreview = getPrimaryPreviewAsset(item);
     const disabled = item.flags?.disabled === true;
+    const folderDndOpenable = item.kind === 'folder' ? item.capabilities?.open : false;
 
     return {
         id: item.id,
@@ -51,7 +52,7 @@ export const adaptBrowserItemToFileData = (item: BrowserItem): BrowserItemFileDa
         selectable: disabled ? false : item.capabilities?.select,
         draggable: disabled ? false : item.capabilities?.drag,
         droppable: disabled ? false : item.capabilities?.drop,
-        dndOpenable: disabled ? false : item.kind === 'folder' ? item.capabilities?.open : false,
+        dndOpenable: disabled ? false : folderDndOpenable,
         size: item.sizeBytes,
         modDate: item.modifiedAt,
         childrenCount: item.childCount,
