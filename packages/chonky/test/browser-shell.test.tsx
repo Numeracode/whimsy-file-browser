@@ -222,8 +222,12 @@ describe('BrowserShell', () => {
 
     it('does not dispatch disabled or invalid-scope custom actions', () => {
         const onAction = vi.fn();
-        const disabledAction = { ...browserActionFixtures[1], disabled: true };
-        const singleOnlyAction = browserActionFixtures[0];
+        const downloadAction = browserActionFixtures.find((action) => action.id === 'download');
+        const openAction = browserActionFixtures.find((action) => action.id === 'open');
+        expect(downloadAction).toBeTruthy();
+        expect(openAction).toBeTruthy();
+        const disabledAction = { ...downloadAction!, disabled: true };
+        const singleOnlyAction = openAction!;
 
         render(
             <BrowserShell
