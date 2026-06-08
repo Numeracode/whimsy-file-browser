@@ -54,6 +54,32 @@ describe('BrowserItem render bridge spike', () => {
         });
     });
 
+    it('forces disabled BrowserItems to be non-interactive in the legacy renderer', () => {
+        const hero = browserItemFixtures.find((item) => item.id === 'image:hero');
+
+        expect(hero).toBeDefined();
+        const disabledItem: BrowserItem = {
+            ...hero!,
+            id: createBrowserOpaqueId('disabled:image:hero'),
+            flags: { ...hero!.flags, disabled: true },
+            capabilities: {
+                open: true,
+                preview: true,
+                select: true,
+                drag: true,
+                drop: true,
+            },
+        };
+
+        const file = adaptBrowserItemToFileData(disabledItem);
+
+        expect(file.openable).toBe(false);
+        expect(file.selectable).toBe(false);
+        expect(file.draggable).toBe(false);
+        expect(file.droppable).toBe(false);
+        expect(file.dndOpenable).toBe(false);
+    });
+
     it('maps folder chain fixtures into legacy folder chain entries', () => {
         const folderChain = adaptBrowserFolderChainToFileArray(browserFolderChainFixtures);
 
