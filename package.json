@@ -10,6 +10,11 @@
       "import": "./packages/chonky/dist/index.mjs",
       "require": "./packages/chonky/dist/index.js"
     },
+    "./browser": {
+      "types": "./packages/chonky/dist/browser.d.ts",
+      "import": "./packages/chonky/dist/browser.mjs",
+      "require": "./packages/chonky/dist/browser.js"
+    },
     "./preview": {
       "types": "./packages/chonky/dist/preview.d.ts",
       "import": "./packages/chonky/dist/preview.mjs",
@@ -27,6 +32,9 @@
     "prepare": "npm run build --workspace packages/chonky",
     "test": "npm run build --workspace packages/chonky && npm run test --workspace packages/chonky && npm run test --workspace packages/chonky-icon-fontawesome",
     "typecheck": "npm run typecheck --workspace packages/chonky && npm run build --workspace packages/chonky && npm run typecheck --workspace packages/chonky-icon-fontawesome"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.2",
