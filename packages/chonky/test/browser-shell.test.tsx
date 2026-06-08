@@ -28,11 +28,11 @@ describe('BrowserShell', () => {
         const { rerender } = render(<BrowserShell items={items} viewMode="list" />);
 
         expect(screen.getByText('Large fixture 0000.jpg')).toBeTruthy();
-        expect(screen.getByTestId('browser-shell').querySelector('[data-view-mode="list"]')?.getAttribute('data-item-count')).toBe('1005');
+        expect((screen.getByTestId('browser-shell').querySelector('[data-view-mode="list"]') as HTMLElement).dataset.itemCount).toBe('1005');
 
         rerender(<BrowserShell items={items} viewMode="grid" />);
 
-        expect(screen.getByTestId('browser-shell').querySelector('[data-view-mode="grid"]')?.getAttribute('data-item-count')).toBe('1005');
+        expect((screen.getByTestId('browser-shell').querySelector('[data-view-mode="grid"]') as HTMLElement).dataset.itemCount).toBe('1005');
     }, 10000);
 
     it('fires selection, open, preview, and folder navigation callbacks with opaque IDs', () => {
@@ -137,8 +137,22 @@ describe('BrowserShell', () => {
         expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ itemId: 'image:hero' }));
 
         fireEvent.keyDown(shell, { key: 'a', ctrlKey: true });
-        const lastSelection = onSelectionChange.mock.calls[onSelectionChange.mock.calls.length - 1][0] as BrowserSelection;
+        const lastSelection = onSelectionChange.mock.lastCall?.[0] as BrowserSelection;
         expect(lastSelection.selectedIds.length).toBeGreaterThan(10);
+    });
+
+    it('focuses the first item on first forward arrow key when no item is focused', () => {
+        const onSelectionChange = vi.fn();
+
+        render(<BrowserShell items={browserItemFixtures} onSelectionChange={onSelectionChange} />);
+
+        const shell = screen.getByTestId('browser-shell');
+        shell.focus();
+        fireEvent.keyDown(shell, { key: 'ArrowDown' });
+
+        expect(onSelectionChange).toHaveBeenCalledWith(
+            expect.objectContaining({ focusedId: 'local:private:backup', selectedIds: [] })
+        );
     });
 
     it('allows hosts to replace toolbar, context menu, and thumbnail rendering', () => {
@@ -281,6 +295,38 @@ describe('BrowserShell', () => {
                     expect.objectContaining({ id: 'pdf:contract' }),
                 ]),
                 selection: expect.objectContaining({ selectedIds: ['image:hero', 'pdf:contract'] }),
+            })
+        );
+    });
+
+    it('uses the pending context-menu selection before controlled selection state updates', () => {
+        const onAction = vi.fn();
+        const onSelectionChange = vi.fn();
+        const selection: BrowserSelection = {
+            selectedIds: [],
+        };
+
+        render(
+            <BrowserShell
+                actions={browserActionFixtures}
+                items={browserItemFixtures}
+                onAction={onAction}
+                onSelectionChange={onSelectionChange}
+                selection={selection}
+            />
+        );
+
+        fireEvent.contextMenu(screen.getByText('hero-photo.jpg'));
+        fireEvent.click(within(screen.getByTestId('browser-context-menu')).getByText('Open'));
+
+        expect(onSelectionChange).toHaveBeenCalledWith(
+            expect.objectContaining({ selectedIds: ['image:hero'], focusedId: 'image:hero' })
+        );
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actionId: 'open',
+                selectedItems: [expect.objectContaining({ id: 'image:hero' })],
+                selection: expect.objectContaining({ selectedIds: ['image:hero'] }),
             })
         );
     });

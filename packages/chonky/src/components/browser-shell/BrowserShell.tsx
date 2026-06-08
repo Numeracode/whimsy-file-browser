@@ -21,6 +21,7 @@ const DEFAULT_SORT: BrowserSortState = { key: 'name', direction: 'asc' };
 
 interface ContextMenuState {
     item: BrowserItem;
+    selection: BrowserSelection;
     x: number;
     y: number;
 }
@@ -133,6 +134,11 @@ const createActionEvent = (
     };
 };
 
+const selectedItemsForSelection = (selection: BrowserSelection, items: readonly BrowserItem[]): readonly BrowserItem[] => {
+    const selectedIdSet = new Set(selection.selectedIds);
+    return items.filter((candidate) => selectedIdSet.has(candidate.id));
+};
+
 export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     const {
         actions = [],
@@ -170,10 +176,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     const currentSelection = selection ?? internalSelection;
     const visibleItems = useMemo(() => sortItems(items.filter((item) => !item.flags?.hidden), currentSort), [items, currentSort]);
     const selectedIdSet = useMemo(() => new Set(currentSelection.selectedIds), [currentSelection.selectedIds]);
-    const selectedItems = useMemo(
-        () => visibleItems.filter((item) => selectedIdSet.has(item.id)),
-        [selectedIdSet, visibleItems]
-    );
+    const selectedItems = useMemo(() => selectedItemsForSelection(currentSelection, visibleItems), [currentSelection, visibleItems]);
     const focusedIndex = useMemo(
         () => visibleItems.findIndex((item) => item.id === currentSelection.focusedId),
         [currentSelection.focusedId, visibleItems]
@@ -277,8 +280,8 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     );
 
     const triggerAction = useCallback(
-        (action: BrowserAction, item?: BrowserItem) => {
-            const event = createActionEvent(action, currentSelection, visibleItems, item);
+        (action: BrowserAction, item?: BrowserItem, actionSelection = currentSelection) => {
+            const event = createActionEvent(action, actionSelection, visibleItems, item);
             if (!isActionEnabled(action, event.selectedItems.length)) return;
             onAction?.(event);
             setContextMenu(null);
@@ -298,7 +301,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     const moveFocus = useCallback(
         (offset: number) => {
             if (visibleItems.length === 0) return;
-            const baseIndex = focusedIndex >= 0 ? focusedIndex : 0;
+            const baseIndex = focusedIndex >= 0 ? focusedIndex : -1;
             const nextIndex = Math.min(Math.max(baseIndex + offset, 0), visibleItems.length - 1);
             focusItem(visibleItems[nextIndex]);
         },
@@ -378,9 +381,9 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
               actions,
               close: () => setContextMenu(null),
               item: contextMenu.item,
-              selectedItems,
-              selection: currentSelection,
-              triggerAction: (action) => triggerAction(action, contextMenu.item),
+              selectedItems: selectedItemsForSelection(contextMenu.selection, visibleItems),
+              selection: contextMenu.selection,
+              triggerAction: (action) => triggerAction(action, contextMenu.item, contextMenu.selection),
           }
         : null;
 
@@ -441,8 +444,13 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
                             viewMode={currentViewMode}
                             onContextMenu={(event) => {
                                 event.preventDefault();
-                                if (!selectedIdSet.has(item.id)) selectSingle(item);
-                                setContextMenu({ item, x: event.clientX, y: event.clientY });
+                                const nextSelection = selectedIdSet.has(item.id)
+                                    ? currentSelection
+                                    : canSelect(item)
+                                      ? makeSelection([item.id], item.id, item.id)
+                                      : makeSelection(currentSelection.selectedIds, item.id, currentSelection.anchorId);
+                                if (!selectedIdSet.has(item.id)) applySelection(nextSelection);
+                                setContextMenu({ item, selection: nextSelection, x: event.clientX, y: event.clientY });
                             }}
                             onClick={(event) => handleItemClick(event, item)}
                             onDoubleClick={() => openItem(item)}
@@ -467,8 +475,8 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
                         <DefaultContextMenu
                             actions={actions}
                             item={contextMenu.item}
-                            selectedCount={selectedItems.length}
-                            triggerAction={(action) => triggerAction(action, contextMenu.item)}
+                            selectedCount={selectedItemsForSelection(contextMenu.selection, visibleItems).length}
+                            triggerAction={(action) => triggerAction(action, contextMenu.item, contextMenu.selection)}
                         />
                     )}
                 </div>
