@@ -1,102 +1,62 @@
 import type {
     BrowserAction,
+    BrowserActionPlacement,
+    BrowserActionSelectionScope,
+    BrowserActionTone,
     BrowserFileOperationKind,
     BrowserItem,
     BrowserSelection,
 } from '../types/browser-item.types';
 import type { BrowserFileOperationEvent } from '../types/browser-operation.types';
 
-export const BROWSER_FILE_OPERATION_ACTIONS: readonly BrowserAction[] = [
-    {
-        id: 'open',
-        label: 'Open',
-        operation: 'open',
-        icon: 'open',
-        placement: ['context-menu', 'row'],
-        selectionScope: 'single',
-    },
-    {
-        id: 'preview',
-        label: 'Preview',
-        operation: 'preview',
-        icon: 'preview',
-        placement: ['context-menu', 'row'],
-        selectionScope: 'single',
-    },
-    {
-        id: 'download',
-        label: 'Download',
-        operation: 'download',
-        icon: 'download',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'any',
-    },
-    {
-        id: 'rename',
-        label: 'Rename',
-        operation: 'rename',
-        icon: 'rename',
-        placement: ['context-menu'],
-        selectionScope: 'single',
-    },
-    {
-        id: 'delete',
-        label: 'Delete',
-        operation: 'delete',
-        icon: 'trash',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'any',
-        tone: 'destructive',
-    },
-    {
-        id: 'favorite',
-        label: 'Favorite',
-        operation: 'favorite',
-        icon: 'star',
-        placement: ['context-menu'],
-        selectionScope: 'single',
-    },
-    {
-        id: 'copy',
-        label: 'Copy',
-        operation: 'copy',
-        icon: 'copy',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'any',
-    },
-    {
-        id: 'move',
-        label: 'Move',
-        operation: 'move',
-        icon: 'move',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'any',
-    },
-    {
-        id: 'paste',
-        label: 'Paste',
-        operation: 'paste',
-        icon: 'paste',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'none',
-    },
-    {
-        id: 'new-folder',
-        label: 'New folder',
-        operation: 'new-folder',
-        icon: 'folder-plus',
-        placement: ['toolbar', 'context-menu'],
-        selectionScope: 'none',
-    },
-    {
-        id: 'upload',
-        label: 'Upload',
-        operation: 'upload',
-        icon: 'upload',
-        placement: ['toolbar'],
-        selectionScope: 'none',
-    },
+type BrowserActionPreset = readonly [
+    BrowserFileOperationKind,
+    string,
+    string,
+    readonly BrowserActionPlacement[],
+    BrowserActionSelectionScope,
+    BrowserActionTone?,
 ];
+
+const ROW_ACTION = ['context-menu', 'row'] as const;
+const CONTEXT_ACTION = ['context-menu'] as const;
+const TOOLBAR_ACTION = ['toolbar'] as const;
+const TOOLBAR_CONTEXT_ACTION = ['toolbar', 'context-menu'] as const;
+
+const DEFAULT_ACTION_PRESETS = [
+    ['open', 'Open', 'open', ROW_ACTION, 'single'],
+    ['preview', 'Preview', 'preview', ROW_ACTION, 'single'],
+    ['download', 'Download', 'download', TOOLBAR_CONTEXT_ACTION, 'any'],
+    ['rename', 'Rename', 'rename', CONTEXT_ACTION, 'single'],
+    ['delete', 'Delete', 'trash', TOOLBAR_CONTEXT_ACTION, 'any', 'destructive'],
+    ['favorite', 'Favorite', 'star', CONTEXT_ACTION, 'single'],
+    ['copy', 'Copy', 'copy', TOOLBAR_CONTEXT_ACTION, 'any'],
+    ['move', 'Move', 'move', TOOLBAR_CONTEXT_ACTION, 'any'],
+    ['paste', 'Paste', 'paste', TOOLBAR_CONTEXT_ACTION, 'none'],
+    ['new-folder', 'New folder', 'folder-plus', TOOLBAR_CONTEXT_ACTION, 'none'],
+    ['upload', 'Upload', 'upload', TOOLBAR_ACTION, 'none'],
+] as const satisfies readonly BrowserActionPreset[];
+
+function createActionFromPreset([
+    operation,
+    label,
+    icon,
+    placement,
+    selectionScope,
+    tone,
+]: BrowserActionPreset): BrowserAction {
+    return {
+        id: operation,
+        label,
+        operation,
+        icon,
+        placement,
+        selectionScope,
+        ...(tone ? { tone } : {}),
+    };
+}
+
+export const BROWSER_FILE_OPERATION_ACTIONS: readonly BrowserAction[] = DEFAULT_ACTION_PRESETS.map(createActionFromPreset);
 
 const OPERATIONS = new Set<BrowserFileOperationKind>(
     BROWSER_FILE_OPERATION_ACTIONS.map((action) => action.operation!)
