@@ -1,5 +1,5 @@
 {
-  "name": "@numeracode/whimsy-file-browser-workspace",
+  "name": "@numeracode/whimsy-file-browser",
   "private": true,
   "main": "packages/chonky/dist/index.js",
   "module": "packages/chonky/dist/index.mjs",
