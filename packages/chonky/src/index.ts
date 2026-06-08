@@ -8,6 +8,11 @@ export { FileList } from './components/file-list/FileList';
 export { FileContextMenu } from './components/external/FileContextMenu';
 export { FullFileBrowser } from './components/external/FullFileBrowser';
 export { BrowserShell } from './components/browser-shell/BrowserShell';
+export { FilePreviewer, defaultPreviewRenderers } from './components/preview/FilePreviewer';
+export { MediaLightbox } from './components/preview/MediaLightbox';
+export { PreviewFallback } from './components/preview/PreviewFallback';
+export { PreviewShell } from './components/preview/PreviewShell';
+export { PreviewTile } from './components/preview/PreviewTile';
 
 export { ChonkyActions, DefaultFileActions, OptionIds } from './action-definitions';
 export { defineFileAction } from './util/helpers';
@@ -65,6 +70,22 @@ export type {
     BrowserSortState,
     BrowserViewMode,
 } from './types/browser-shell.types';
+export type {
+    AvailableBrowserPreviewAsset,
+    FilePreviewerProps,
+    LazyPreviewRenderer,
+    MediaLightboxProps,
+    PreviewFallbackProps,
+    PreviewManifestLoader,
+    PreviewRendererComponent,
+    PreviewRendererEntry,
+    PreviewRendererModule,
+    PreviewRendererProps,
+    PreviewRendererRegistry,
+    PreviewRequest,
+    PreviewShellProps,
+    PreviewTileProps,
+} from './types/preview-shell.types';
 export {
     browserActionFixtures,
     browserFolderChainFixtures,

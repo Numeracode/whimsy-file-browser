@@ -45,6 +45,29 @@ export function MyBrowser() {
 }
 ```
 
+## Preview Shell
+
+Preview UI also lives in this package lane. `PreviewShell` renders signed
+preview assets supplied by the host app; it never signs URLs, reads tokens, or
+parses provider-specific IDs.
+
+```tsx
+import { PreviewShell } from '@numeracode/whimsy-file-browser';
+
+export function MyPreview({ item }) {
+    return (
+        <PreviewShell
+            item={item}
+            loadPreview={({ item }) => api.getPreviewManifest(item.id)}
+        />
+    );
+}
+```
+
+Use the same `PreviewShell` from filebrowser, spaces, showcase, dedupe, and any
+gallery surface. Whimsy remains responsible for auth, permission checks, and
+signed manifest generation.
+
 ## Development
 
 ```bash
