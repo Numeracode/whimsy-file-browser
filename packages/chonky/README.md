@@ -31,6 +31,20 @@ export function MyBrowser() {
 The exported component/type names currently retain the upstream `Chonky*` naming
 for compatibility. The package boundary is owned by Numeracode.
 
+## BrowserItem-native shell
+
+Use `BrowserShell` for new Whimsy adapters. It renders `BrowserItem` data
+natively, supports controlled or uncontrolled selection, and exposes
+open/preview/navigation/action callbacks with opaque IDs.
+
+```tsx
+import { BrowserShell, browserItemFixtures } from '@numeracode/whimsy-file-browser';
+
+export function MyBrowser() {
+    return <BrowserShell items={browserItemFixtures} onOpen={({ itemId }) => console.log(itemId)} />;
+}
+```
+
 ## Development
 
 ```bash

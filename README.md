@@ -25,6 +25,26 @@ The public TypeScript API intentionally keeps the existing `Chonky*` export
 names during the extraction work. Package ownership is scoped to Numeracode;
 symbol renaming is deferred until Whimsy parity is proven.
 
+## BrowserItem Shell
+
+New Whimsy integration should use the provider-agnostic `BrowserShell` surface.
+It consumes opaque `BrowserItem` objects and emits callbacks; it does not call
+Whimsy APIs or parse provider IDs.
+
+```tsx
+import { BrowserShell, browserItemFixtures } from '@numeracode/whimsy-file-browser';
+
+export function MyBrowser() {
+    return (
+        <BrowserShell
+            items={browserItemFixtures}
+            onOpen={({ itemId }) => console.log('open', itemId)}
+            onPreview={({ itemId }) => console.log('preview', itemId)}
+        />
+    );
+}
+```
+
 ## Development
 
 ```bash
