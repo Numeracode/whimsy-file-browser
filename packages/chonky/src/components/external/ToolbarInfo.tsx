@@ -8,8 +8,6 @@ import React from 'react';
 import { useIntl } from 'react-intl';
 import { useSelector } from 'react-redux';
 
-import Typography from '@material-ui/core/Typography';
-
 import { selectHiddenFileCount, selectors, selectSelectionSize } from '../../redux/selectors';
 import { getI18nId, I18nNamespace } from '../../util/i18n';
 import { important, makeGlobalChonkyStyles } from '../../util/styles';
@@ -58,7 +56,7 @@ export const ToolbarInfo: React.FC<ToolbarInfoProps> = React.memo(() => {
 
     return (
         <div className={classes.infoContainer}>
-            <Typography className={classes.infoText} variant="body1">
+            <span className={classes.infoText}>
                 {fileCountString}
                 {(selectedString || hiddenString) && (
                     <span className={classes.extraInfoSpan}>
@@ -70,7 +68,7 @@ export const ToolbarInfo: React.FC<ToolbarInfoProps> = React.memo(() => {
                         <span className={classes.hiddenCountText}>{hiddenString}</span>)
                     </span>
                 )}
-            </Typography>
+            </span>
         </div>
     );
 });

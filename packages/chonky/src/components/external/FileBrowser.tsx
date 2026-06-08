@@ -1,13 +1,8 @@
-import {
-    createMuiTheme,
-    ThemeProvider as MuiThemeProvider,
-} from '@material-ui/core/styles';
 import merge from 'deepmerge';
 import React, { ReactNode, useMemo } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { IntlProvider } from 'react-intl';
-import { ThemeProvider } from 'react-jss';
 import { Provider as ReduxProvider } from 'react-redux';
 import shortid from 'shortid';
 
@@ -19,6 +14,7 @@ import { useStaticValue } from '../../util/hooks-helpers';
 import { ChonkyFormattersContext, defaultFormatters } from '../../util/i18n';
 import { ChonkyIconContext } from '../../util/icon-helper';
 import {
+    ChonkyThemeContext,
     darkThemeOverride,
     lightTheme,
     mobileThemeOverride,
@@ -27,13 +23,6 @@ import {
 import { ChonkyBusinessLogic } from '../internal/ChonkyBusinessLogic';
 import { ChonkyIconPlaceholder } from '../internal/ChonkyIconPlaceholder';
 import { ChonkyPresentationLayer } from '../internal/ChonkyPresentationLayer';
-
-// if (process.env.NODE_ENV === 'development') {
-//     const whyDidYouRender = require('@welldone-software/why-did-you-render');
-//     whyDidYouRender(React, {
-//         trackAllPureComponents: true,
-//     });
-// }
 
 export const FileBrowser = React.forwardRef<
     FileBrowserHandle,
@@ -65,13 +54,7 @@ export const FileBrowser = React.forwardRef<
 
     const isMobileBreakpoint = useIsMobileBreakpoint();
     const theme = useMemo(() => {
-        const muiTheme = createMuiTheme({
-            palette: { type: darkMode ? 'dark' : 'light' },
-        });
-        const combinedTheme = merge(
-            muiTheme,
-            merge(lightTheme, darkMode ? darkThemeOverride : {})
-        );
+        const combinedTheme = merge(lightTheme, darkMode ? darkThemeOverride : {});
         return isMobileBreakpoint
             ? merge(combinedTheme, mobileThemeOverride)
             : combinedTheme;
@@ -88,25 +71,23 @@ export const FileBrowser = React.forwardRef<
         <IntlProvider locale="en" defaultLocale="en" {...i18n}>
             <ChonkyFormattersContext.Provider value={formatters}>
                 <ReduxProvider store={store}>
-                    <ThemeProvider theme={theme}>
-                        <MuiThemeProvider theme={theme}>
-                            <ChonkyIconContext.Provider
-                                value={
-                                    iconComponent ??
-                                    defaultConfig.iconComponent ??
-                                    ChonkyIconPlaceholder
-                                }
-                            >
-                                {disableDragAndDrop || disableDragAndDropProvider ? (
-                                    chonkyComps
-                                ) : (
-                                    <DndProvider backend={HTML5Backend}>
-                                        {chonkyComps}
-                                    </DndProvider>
-                                )}
-                            </ChonkyIconContext.Provider>
-                        </MuiThemeProvider>
-                    </ThemeProvider>
+                    <ChonkyThemeContext.Provider value={theme as any}>
+                        <ChonkyIconContext.Provider
+                            value={
+                                iconComponent ??
+                                defaultConfig.iconComponent ??
+                                ChonkyIconPlaceholder
+                            }
+                        >
+                            {disableDragAndDrop || disableDragAndDropProvider ? (
+                                chonkyComps
+                            ) : (
+                                <DndProvider backend={HTML5Backend}>
+                                    {chonkyComps}
+                                </DndProvider>
+                            )}
+                        </ChonkyIconContext.Provider>
+                    </ChonkyThemeContext.Provider>
                 </ReduxProvider>
             </ChonkyFormattersContext.Provider>
         </IntlProvider>

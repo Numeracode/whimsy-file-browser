@@ -4,8 +4,6 @@
  * @license MIT
  */
 
-import Box from '@material-ui/core/Box';
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
 import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -17,7 +15,7 @@ import {
 } from '../../redux/selectors';
 import { useDndContextAvailable } from '../../util/dnd-fallback';
 import { elementIsInsideButton } from '../../util/helpers';
-import { makeGlobalChonkyStyles } from '../../util/styles';
+import { makeGlobalChonkyStyles, useChonkyTheme } from '../../util/styles';
 import { useContextMenuTrigger } from '../external/FileContextMenu-hooks';
 import { DnDFileListDragLayer } from '../file-list/DnDFileListDragLayer';
 import { HotkeyListener } from './HotkeyListener';
@@ -38,10 +36,6 @@ export const ChonkyPresentationLayer: React.FC<ChonkyPresentationLayerProps> = (
     const handleClickAway = useCallback(
         (event: React.MouseEvent<Document>) => {
             if (!clearSelectionOnOutsideClick || elementIsInsideButton(event.target)) {
-                // We only clear out the selection on outside click if the click target
-                // was not a button. We don't want to clear out the selection when a
-                // button is clicked because Chonky users might want to trigger some
-                // selection-related action on that button click.
                 return;
             }
             dispatch(reduxActions.clearSelection());
@@ -65,25 +59,32 @@ export const ChonkyPresentationLayer: React.FC<ChonkyPresentationLayerProps> = (
     const showContextMenu = useContextMenuTrigger();
 
     const classes = useStyles();
-    return (
-        <ClickAwayListener onClickAway={handleClickAway}>
-            <Box className={classes.chonkyRoot} onContextMenu={showContextMenu}>
-                {!dndDisabled && dndContextAvailable && <DnDFileListDragLayer />}
-                {hotkeyListenerComponents}
-                {children ? children : null}
-            </Box>
-        </ClickAwayListener>
-    );
-};
-
-const useStyles = makeGlobalChonkyStyles(theme => ({
-    chonkyRoot: {
+    const theme = useChonkyTheme();
+    const rootStyle: React.CSSProperties = {
         backgroundColor: theme.palette.background.paper,
         border: `solid 1px ${theme.palette.divider}`,
         padding: theme.margins.rootLayoutMargin,
         fontSize: theme.fontSizes.rootPrimary,
         color: theme.palette.text.primary,
-        touchAction: 'manipulation', // Disabling zoom on double tap
+    };
+
+    return (
+        <div
+            className={classes.chonkyRoot}
+            style={rootStyle}
+            onContextMenu={showContextMenu}
+            onClick={handleClickAway as any}
+        >
+            {!dndDisabled && dndContextAvailable && <DnDFileListDragLayer />}
+            {hotkeyListenerComponents}
+            {children ? children : null}
+        </div>
+    );
+};
+
+const useStyles = makeGlobalChonkyStyles(() => ({
+    chonkyRoot: {
+        touchAction: 'manipulation',
         fontFamily: 'sans-serif',
         flexDirection: 'column',
         boxSizing: 'border-box',
