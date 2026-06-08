@@ -52,7 +52,7 @@ preview assets supplied by the host app; it never signs URLs, reads tokens, or
 parses provider-specific IDs.
 
 ```tsx
-import { PreviewShell } from '@numeracode/whimsy-file-browser';
+import { PreviewShell } from '@numeracode/whimsy-file-browser/preview';
 
 export function MyPreview({ item }) {
     return (
@@ -67,6 +67,10 @@ export function MyPreview({ item }) {
 Use the same `PreviewShell` from filebrowser, spaces, showcase, dedupe, and any
 gallery surface. Whimsy remains responsible for auth, permission checks, and
 signed manifest generation.
+
+Prefer the `/preview` subpath for preview-only integrations. It avoids loading
+the legacy browser/redux runtime when a host app only needs tile, shell,
+renderer, or lightbox primitives.
 
 ## Development
 
