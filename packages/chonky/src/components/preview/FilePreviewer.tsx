@@ -36,6 +36,8 @@ const audioRenderer: PreviewRendererComponent = ({ asset, item }) => (
 const frameRenderer = (testId: string, titlePrefix: string): PreviewRendererComponent => ({ asset, item }) => (
     <iframe
         data-testid={testId}
+        referrerPolicy="no-referrer"
+        sandbox="allow-downloads allow-same-origin"
         src={asset.url}
         style={styles.frame}
         title={`${titlePrefix}: ${item.name}`}

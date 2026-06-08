@@ -54,6 +54,14 @@ describe('PreviewShell', () => {
         }
     });
 
+    it('sandboxes iframe-based preview renderers', () => {
+        render(<PreviewShell item={itemById('pdf:contract')} />);
+
+        const frame = screen.getByTestId('preview-pdf');
+        expect(frame.getAttribute('sandbox')).toBe('allow-downloads allow-same-origin');
+        expect(frame.getAttribute('referrerpolicy')).toBe('no-referrer');
+    });
+
     it('lazy-loads document, spreadsheet, and presentation renderers from the registry', async () => {
         const customRenderers: PreviewRendererRegistry = {
             document: {

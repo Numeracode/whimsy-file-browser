@@ -22,9 +22,11 @@ export const PreviewShell: React.FC<PreviewShellProps> = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const requestIdRef = useRef(0);
+    const activeItemIdRef = useRef(item.id);
 
     useEffect(() => {
         requestIdRef.current += 1;
+        activeItemIdRef.current = item.id;
         setResolvedDescriptor(descriptor ?? item.preview);
         setError(null);
         setLoading(false);
@@ -40,14 +42,14 @@ export const PreviewShell: React.FC<PreviewShellProps> = ({
             setError(null);
             try {
                 const nextDescriptor = await loadPreview({ item, reason });
-                if (requestId !== requestIdRef.current || requestedItemId !== item.id) return;
+                if (requestId !== requestIdRef.current || requestedItemId !== activeItemIdRef.current) return;
                 setResolvedDescriptor(nextDescriptor);
             } catch (loadError) {
-                if (requestId !== requestIdRef.current || requestedItemId !== item.id) return;
+                if (requestId !== requestIdRef.current || requestedItemId !== activeItemIdRef.current) return;
                 const message = loadError instanceof Error ? loadError.message : 'Preview manifest failed to load.';
                 setError(message);
             } finally {
-                if (requestId === requestIdRef.current && requestedItemId === item.id) setLoading(false);
+                if (requestId === requestIdRef.current && requestedItemId === activeItemIdRef.current) setLoading(false);
             }
         },
         [item, loadPreview]
