@@ -33,7 +33,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "react": ">=16"
+    "react": ">=16.8"
   },
   "prettier": {
     "trailingComma": "es5",

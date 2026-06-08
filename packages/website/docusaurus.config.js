@@ -14,7 +14,7 @@ module.exports = {
     navbar: {
       title: `Whimsy File Browser v${chonkyPackage.version}`,
       logo: {
-        alt: 'Chonky',
+        alt: 'Whimsy File Browser',
         src: 'img/chonky-sphere-v2.png',
       },
       items: [
