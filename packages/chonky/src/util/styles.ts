@@ -1,10 +1,29 @@
-import { Theme as MuiTheme } from '@material-ui/core/styles';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
+/**
+ * @author Timur Kuzhagaliyev <tim.kuzh@gmail.com>
+ * @copyright 2020
+ * @license MIT
+ */
+
+import React, { useContext, useEffect, useRef } from 'react';
 import classnames from 'classnames';
-import { createUseStyles } from 'react-jss';
 import { DeepPartial } from 'tsdef';
 
+// ──────────────────────────────────────────────
+// Theme definitions
+// ──────────────────────────────────────────────
+
 export const lightTheme = {
+    palette: {
+        background: {
+            paper: '#ffffff',
+            default: '#fafafa',
+        },
+        text: {
+            primary: 'rgba(0, 0, 0, 0.87)',
+            disabled: 'rgba(0, 0, 0, 0.38)',
+        },
+        divider: 'rgba(0, 0, 0, 0.12)',
+    },
     colors: {
         debugRed: '#fabdbd',
         debugBlue: '#bdd8fa',
@@ -25,7 +44,7 @@ export const lightTheme = {
 
     toolbar: {
         size: 30,
-        lineHeight: '30px', // `px` suffix is required for `line-height` fields to work
+        lineHeight: '30px',
         fontSize: 15,
         buttonRadius: 4,
     },
@@ -76,6 +95,17 @@ export const lightTheme = {
 export type ChonkyTheme = typeof lightTheme;
 
 export const darkThemeOverride: DeepPartial<ChonkyTheme> = {
+    palette: {
+        background: {
+            paper: '#424242',
+            default: '#303030',
+        },
+        text: {
+            primary: '#ffffff',
+            disabled: 'rgba(255, 255, 255, 0.5)',
+        },
+        divider: 'rgba(255, 255, 255, 0.12)',
+    },
     gridFileEntry: {
         fileColorTint: 'rgba(50, 50, 50, 0.4)',
         folderBackColorTint: 'rgba(50, 50, 50, 0.4)',
@@ -105,9 +135,34 @@ export const mobileThemeOverride: DeepPartial<ChonkyTheme> = {
     },
 };
 
+// ──────────────────────────────────────────────
+// Theme context
+// ──────────────────────────────────────────────
+
+export const ChonkyThemeContext = React.createContext<ChonkyTheme>(lightTheme);
+
+export const useChonkyTheme = () => useContext(ChonkyThemeContext);
+
+// ──────────────────────────────────────────────
+// useMediaQuery replacement (no MUI dependency)
+// ──────────────────────────────────────────────
+
 export const useIsMobileBreakpoint = () => {
-    return useMediaQuery('(max-width:480px)');
+    const [isMobile, setIsMobile] = React.useState(false);
+    useEffect(() => {
+        if (typeof window.matchMedia !== 'function') return;
+        const mql = window.matchMedia('(max-width:480px)');
+        setIsMobile(mql.matches);
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        mql.addEventListener('change', handler);
+        return () => mql.removeEventListener('change', handler);
+    }, []);
+    return isMobile;
 };
+
+// ──────────────────────────────────────────────
+// Utility functions
+// ──────────────────────────────────────────────
 
 export const getStripeGradient = (colorOne: string, colorTwo: string) =>
     'repeating-linear-gradient(' +
@@ -118,43 +173,237 @@ export const getStripeGradient = (colorOne: string, colorTwo: string) =>
     `${colorTwo} 20px` +
     ')';
 
-export const makeLocalChonkyStyles = <C extends string = string>(
-    styles: (theme: ChonkyTheme & MuiTheme) => any
-    // @ts-ignore
-): any => createUseStyles<ChonkyTheme, C>(styles);
+export const important = <T>(value: T) => [value, '!important'] as any;
 
-export const makeGlobalChonkyStyles = <C extends string = string>(
-    makeStyles: (theme: ChonkyTheme & MuiTheme) => any
-) => {
-    const selectorMapping = {};
-    const makeGlobalStyles = (theme: ChonkyTheme) => {
-        const localStyles = makeStyles(theme as any);
-        const globalStyles = {};
-        const localSelectors = Object.keys(localStyles);
-        localSelectors.map(localSelector => {
-            const globalSelector = `chonky-${localSelector}`;
-            const jssSelector = `@global .${globalSelector}`;
-            // @ts-ignore
-            globalStyles[jssSelector] = localStyles[localSelector];
-            // @ts-ignore
-            selectorMapping[localSelector] = globalSelector;
-        });
-        return globalStyles;
-    };
+export const c: (...args: any[]) => string = classnames;
 
-    // @ts-ignore
-    const useStyles = createUseStyles<ChonkyTheme, C>(makeGlobalStyles as any);
-    return (...args: any[]): any => {
-        const styles = useStyles(...args);
-        const classes = {};
-        Object.keys(selectorMapping).map(localSelector => {
-            // @ts-ignore
-            classes[localSelector] = selectorMapping[localSelector];
-        });
-        return { ...classes, ...styles };
+// ──────────────────────────────────────────────
+// CSS-in-JS engine (replaces react-jss)
+// ──────────────────────────────────────────────
+
+let localStyleCounter = 0;
+let globalStyleCounter = 0;
+
+/** Convert camelCase CSS property to kebab-case, handling vendor prefixes. */
+function camelToKebab(key: string): string {
+    const result = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+    // Fix vendor prefixes: `webkit` → `-webkit`, `ms` → `-ms`, etc.
+    if (result.startsWith('-webkit')) return `-${result}`;
+    if (result.startsWith('-ms')) return `-${result}`;
+    if (result.startsWith('-moz')) return `-${result}`;
+    return result;
+}
+
+function resolveCSSValue(value: any): string {
+    if (typeof value === 'number') return `${value}px`;
+    if (Array.isArray(value)) {
+        // The `important()` helper wraps in an array with '!important' marker
+        if (value.length === 2 && value[1] === '!important') {
+            return `${resolveCSSValue(value[0])} !important`;
+        }
+        return value.map((v) => resolveCSSValue(v)).join(' ');
+    }
+    return String(value);
+}
+
+/**
+ * Generate a CSS string from a single style property entry.
+ */
+function propToCSS(key: string, value: any, dynamic?: any): string {
+    const cssKey = camelToKebab(key);
+    if (typeof value === 'function') {
+        return `${cssKey}: ${resolveCSSValue(value(dynamic))};`;
+    }
+    return `${cssKey}: ${resolveCSSValue(value)};`;
+}
+
+/**
+ * Walk a nested style object (which may include `&` pseudo-selectors,
+ * nested selectors, `@keyframes`, `@media`, etc.) and produce a CSS string.
+ * `resolveLocalRef` lets the caller replace `$name` references with the
+ * actual generated name (used for animation names).
+ */
+function styleObjToCSS(
+    selector: string,
+    obj: any,
+    dynamic?: any,
+    resolveLocalRef?: (name: string) => string
+): string {
+    const lines: string[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+        if (key.startsWith('@keyframes')) {
+            // `@keyframes` is handled at the top level – skip here.
+            continue;
+        }
+        if (key.startsWith('@')) {
+            // At-rule like `@media` or `@global`
+            let inner = '';
+            for (const [nk, nv] of Object.entries(value as any)) {
+                if (typeof nv === 'object' && nv !== null && !Array.isArray(nv)) {
+                    inner += styleObjToCSS(`${selector}${nk}`, nv as any, dynamic, resolveLocalRef);
+                } else {
+                    inner += `  ${propToCSS(nk, nv, dynamic)}\n`;
+                }
+            }
+            const atRuleName = key.startsWith('@global ')
+                ? key.replace('@global ', '')
+                : key;
+            lines.push(`${atRuleName} {\n${selector} {\n${inner}}\n}`);
+            continue;
+        }
+        if (key.startsWith('&')) {
+            // Pseudo-class / pseudo-element
+            const pseudoSelector = key.replace('&', selector);
+            lines.push(styleObjToCSS(pseudoSelector, value, dynamic, resolveLocalRef));
+            continue;
+        }
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            // Descendant or child selector
+            lines.push(styleObjToCSS(`${selector} ${key}`, value, dynamic, resolveLocalRef));
+            continue;
+        }
+
+        // Handle `$name` references in values (e.g. animationName: '$loading-placeholder')
+        let resolvedValue = value;
+        if (resolveLocalRef && typeof value === 'string' && value.startsWith('$')) {
+            resolvedValue = resolveLocalRef(value.slice(1));
+        }
+        lines.push(`  ${propToCSS(key, resolvedValue, dynamic)}\n`);
+    }
+    return lines.join('');
+}
+
+function injectStylesheet(id: string, css: string) {
+    let el = document.getElementById(id) as HTMLStyleElement | null;
+    if (!el) {
+        el = document.createElement('style');
+        el.id = id;
+        el.setAttribute('data-chonky', '');
+        document.head.appendChild(el);
+    }
+    el.textContent = css;
+}
+
+function removeStylesheet(id: string) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+/**
+ * `makeLocalChonkyStyles` – replaces react-jss `createUseStyles` for local
+ * (component-scoped) styles. Returns a hook that accepts an optional dynamic
+ * argument and returns a className map.
+ */
+export const makeLocalChonkyStyles = (
+    styles: (theme: ChonkyTheme) => any
+): ((dynamic?: any) => Record<string, string>) => {
+    const componentId = localStyleCounter++;
+    const prefix = `cls-${componentId}`;
+
+    return (dynamic?: any): Record<string, string> => {
+        const theme = useChonkyTheme();
+        const keyframesRef = useRef<Record<string, string>>({});
+
+        const styleObj = styles(theme);
+
+        // Collect `@keyframes` first and generate unique names
+        const keyframeMapping: Record<string, string> = {};
+        const cssParts: string[] = [];
+        const classes: Record<string, string> = {};
+
+        for (const [key, value] of Object.entries(styleObj)) {
+            if (key.startsWith('@keyframes')) {
+                const kfName = key.replace('@keyframes ', '').trim();
+                const generatedName = `${prefix}-kf-${kfName}`;
+                keyframeMapping[kfName] = generatedName;
+                let kfCSS = `@keyframes ${generatedName} {\n`;
+                for (const [pct, props] of Object.entries(value as any)) {
+                    kfCSS += `  ${pct} {\n`;
+                    for (const [pk, pv] of Object.entries(props as any)) {
+                        kfCSS += `    ${propToCSS(pk, pv)}\n`;
+                    }
+                    kfCSS += `  }\n`;
+                }
+                kfCSS += `}\n`;
+                cssParts.push(kfCSS);
+                continue;
+            }
+        }
+
+        // Generate class-based CSS
+        for (const [key, value] of Object.entries(styleObj)) {
+            if (key.startsWith('@keyframes')) continue;
+            const className = `${prefix}-${key}`;
+            classes[key] = className;
+            const selector = `.${className}`;
+            const resolveLocalRef = (name: string) => keyframeMapping[name] || name;
+            cssParts.push(styleObjToCSS(selector, value, dynamic, resolveLocalRef));
+        }
+
+        const css = cssParts.join('\n');
+        const styleId = `ch-styles-${componentId}`;
+
+        // Track previous dynamic state to decide if we need to re-inject
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        useEffect(() => {
+            if (css.trim()) {
+                injectStylesheet(styleId, css);
+            }
+            return () => removeStylesheet(styleId);
+            // Re-inject when CSS changes (dynamic state or theme)
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [css]);
+
+        return classes;
     };
 };
 
-export const important = <T>(value: T) => [value, '!important'];
+/**
+ * `makeGlobalChonkyStyles` – replaces the global-styles variant.
+ * Generates CSS class names with a deterministic `chonky-` prefix.
+ */
+export const makeGlobalChonkyStyles = (
+    makeStyles: (theme: ChonkyTheme) => any
+): ((...args: any[]) => Record<string, string>) => {
+    const componentId = globalStyleCounter++;
+    const prefix = `ch-global-${componentId}`;
 
-export const c: (...args: any[]) => string = classnames;
+    // Build selector mapping once (static)
+    let selectorMapping: Record<string, string> = {};
+    // We need a closure around the factory to inspect keys
+    const styleFactory = makeStyles;
+
+    return (...args: any[]): Record<string, string> => {
+        const theme = useChonkyTheme();
+        const dynamic = args[0];
+
+        const localStyles = styleFactory(theme);
+        const cssParts: string[] = [];
+        const classes: Record<string, string> = {};
+        const localMapping: Record<string, string> = {};
+
+        for (const localSelector of Object.keys(localStyles)) {
+            const globalSelector = `chonky-${localSelector}`;
+            localMapping[localSelector] = globalSelector;
+            classes[localSelector] = globalSelector;
+            const selDef = localStyles[localSelector];
+            // Generate: `.chonky-XXX { ... }` directly
+            cssParts.push(styleObjToCSS(`.${globalSelector}`, selDef, dynamic));
+        }
+        selectorMapping = localMapping;
+
+        const css = cssParts.join('\n');
+        const styleId = `ch-global-styles-${componentId}`;
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        useEffect(() => {
+            if (css.trim()) {
+                injectStylesheet(styleId, css);
+            }
+            return () => removeStylesheet(styleId);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [css]);
+
+        return { ...classes, ...selectorMapping };
+    };
+};

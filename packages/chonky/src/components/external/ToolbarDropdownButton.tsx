@@ -4,9 +4,6 @@
  * @license MIT
  */
 
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import MenuItem from '@material-ui/core/MenuItem';
 import React, { useCallback, useContext } from 'react';
 import { Nullable } from 'tsdef';
 
@@ -28,7 +25,7 @@ export interface ToolbarDropdownButtonProps {
 }
 
 export const ToolbarDropdownButton = React.forwardRef(
-    (props: ToolbarDropdownButtonProps, ref: React.Ref<HTMLLIElement>) => {
+    (props: ToolbarDropdownButtonProps, ref: React.Ref<HTMLDivElement>) => {
         const { text, active, icon, onClick, disabled } = props;
         const classes = useStyles();
         const ChonkyIcon = useContext(ChonkyIconContext);
@@ -38,21 +35,24 @@ export const ToolbarDropdownButton = React.forwardRef(
             [classes.activeButton]: active,
         });
         return (
-            <MenuItem
+            <div
                 ref={ref}
                 className={className}
-                onClick={onClick}
-                disabled={disabled}
+                onClick={disabled ? undefined : onClick}
+                role="menuitem"
+                tabIndex={-1}
+                style={{
+                    opacity: disabled ? 0.5 : 1,
+                    cursor: disabled ? 'default' : 'pointer',
+                }}
             >
                 {icon && (
-                    <ListItemIcon className={classes.icon}>
+                    <span className={classes.icon}>
                         <ChonkyIcon icon={icon} fixedWidth={true} />
-                    </ListItemIcon>
+                    </span>
                 )}
-                <ListItemText primaryTypographyProps={{ className: classes.text }}>
-                    {text}
-                </ListItemText>
-            </MenuItem>
+                <span className={classes.text}>{text}</span>
+            </div>
         );
     }
 );
@@ -64,12 +64,19 @@ const useStyles = makeGlobalChonkyStyles(theme => ({
         minHeight: important('auto'),
         minWidth: important('auto'),
         padding: important(20),
+        display: 'flex',
+        alignItems: 'center',
+        whiteSpace: 'nowrap',
+        '&:hover': {
+            backgroundColor: 'rgba(0,0,0,0.04)',
+        },
     },
     icon: {
         fontSize: important(theme.toolbar.fontSize),
         minWidth: important('auto'),
         color: important('inherit'),
         marginRight: 8,
+        display: 'inline-flex',
     },
     text: {
         fontSize: important(theme.toolbar.fontSize),
@@ -85,7 +92,7 @@ export interface SmartToolbarDropdownButtonProps {
 }
 
 export const SmartToolbarDropdownButton = React.forwardRef(
-    (props: SmartToolbarDropdownButtonProps, ref: React.Ref<HTMLLIElement>) => {
+    (props: SmartToolbarDropdownButtonProps, ref: React.Ref<HTMLDivElement>) => {
         const { fileActionId, onClickFollowUp } = props;
 
         const action = useParamSelector(selectFileActionData, fileActionId);
@@ -93,7 +100,6 @@ export const SmartToolbarDropdownButton = React.forwardRef(
         const { icon, active, disabled } = useFileActionProps(fileActionId);
         const { buttonName } = useLocalizedFileActionStrings(action);
 
-        // Combine external click handler with internal one
         const handleClick = useCallback(() => {
             triggerAction();
             if (onClickFollowUp) onClickFollowUp();
