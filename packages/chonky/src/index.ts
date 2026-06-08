@@ -7,6 +7,7 @@ export { FileToolbar } from './components/external/FileToolbar';
 export { FileList } from './components/file-list/FileList';
 export { FileContextMenu } from './components/external/FileContextMenu';
 export { FullFileBrowser } from './components/external/FullFileBrowser';
+export { BrowserShell } from './components/browser-shell/BrowserShell';
 
 export { ChonkyActions, DefaultFileActions, OptionIds } from './action-definitions';
 export { defineFileAction } from './util/helpers';
@@ -52,6 +53,18 @@ export type {
     BrowserSourceKind,
     PreviewDescriptor,
 } from './types/browser-item.types';
+export type {
+    BrowserShellActionEvent,
+    BrowserShellContextMenuRenderProps,
+    BrowserShellItemEvent,
+    BrowserShellNavigateEvent,
+    BrowserShellProps,
+    BrowserShellToolbarRenderProps,
+    BrowserSortDirection,
+    BrowserSortKey,
+    BrowserSortState,
+    BrowserViewMode,
+} from './types/browser-shell.types';
 export {
     browserActionFixtures,
     browserFolderChainFixtures,
