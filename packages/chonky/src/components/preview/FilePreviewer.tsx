@@ -15,6 +15,18 @@ const imageRenderer: PreviewRendererComponent = ({ asset, item }) => (
     <img alt={item.name} data-testid="preview-image" src={asset.url} style={styles.media} />
 );
 
+const renderTracks = (asset: PreviewRendererProps['asset']) =>
+    asset.tracks?.map((track) => (
+        <track
+            key={`${track.kind}:${track.srcLang}:${track.src}`}
+            default={track.default}
+            kind={track.kind}
+            label={track.label}
+            src={track.src}
+            srcLang={track.srcLang}
+        />
+    ));
+
 const videoRenderer: PreviewRendererComponent = ({ asset, item, thumbnailUrl }) => (
     <video
         controls
@@ -23,13 +35,17 @@ const videoRenderer: PreviewRendererComponent = ({ asset, item, thumbnailUrl }) 
         src={asset.url}
         style={styles.media}
         title={item.name}
-    />
+    >
+        {renderTracks(asset)}
+    </video>
 );
 
 const audioRenderer: PreviewRendererComponent = ({ asset, item }) => (
     <div data-testid="preview-audio" style={styles.audio}>
         <div style={styles.audioTitle}>{item.name}</div>
-        <audio controls src={asset.url} style={styles.audioPlayer} />
+        <audio controls src={asset.url} style={styles.audioPlayer}>
+            {renderTracks(asset)}
+        </audio>
     </div>
 );
 
@@ -48,7 +64,7 @@ const lightweightDocumentRenderer = (label: string): PreviewRendererComponent =>
     <div data-testid="preview-document" style={styles.document}>
         <div style={styles.documentBadge}>{label}</div>
         <div style={styles.documentTitle}>{item.name}</div>
-        <a href={asset.url} rel="noreferrer" style={styles.documentLink} target="_blank">
+        <a href={asset.url} rel="noopener noreferrer" style={styles.documentLink} target="_blank">
             Open signed preview
         </a>
     </div>

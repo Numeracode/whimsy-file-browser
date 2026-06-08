@@ -52,6 +52,8 @@ export type {
     BrowserPreviewAsset,
     BrowserPreviewAssetKind,
     BrowserPreviewRenderer,
+    BrowserPreviewTrack,
+    BrowserPreviewTrackKind,
     BrowserPreviewUnavailableReason,
     BrowserSelection,
     BrowserSourceDescriptor,

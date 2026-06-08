@@ -41,6 +41,7 @@ export const MediaLightbox: React.FC<MediaLightboxProps> = ({ onOpenChange, open
 
     return (
         <div
+            aria-label={typeof title === 'string' ? title : previewProps.item.name}
             aria-modal="true"
             data-testid="media-lightbox"
             onKeyDown={handleKeyDown}

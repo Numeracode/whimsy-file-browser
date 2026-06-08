@@ -54,6 +54,49 @@ describe('PreviewShell', () => {
         }
     });
 
+    it('renders provider-supplied caption tracks for video and audio previews', () => {
+        const track = {
+            kind: 'captions' as const,
+            src: 'https://signed.example.test/captions.vtt',
+            srcLang: 'en',
+            label: 'English',
+            default: true,
+        };
+        const videoItem: BrowserItem = {
+            ...itemById('video:walkthrough'),
+            preview: {
+                renderer: 'video',
+                preview: {
+                    status: 'available',
+                    kind: 'preview',
+                    url: 'https://signed.example.test/video.mp4',
+                    contentType: 'video/mp4',
+                    tracks: [track],
+                },
+            },
+        };
+        const audioItem: BrowserItem = {
+            ...itemById('audio:jingle'),
+            preview: {
+                renderer: 'audio',
+                preview: {
+                    status: 'available',
+                    kind: 'preview',
+                    url: 'https://signed.example.test/audio.mp3',
+                    contentType: 'audio/mpeg',
+                    tracks: [track],
+                },
+            },
+        };
+
+        const { unmount } = render(<PreviewShell item={videoItem} />);
+        expect(screen.getByTestId('preview-video').querySelector('track')?.getAttribute('label')).toBe('English');
+        unmount();
+
+        render(<PreviewShell item={audioItem} />);
+        expect(screen.getByTestId('preview-audio').querySelector('track')?.getAttribute('kind')).toBe('captions');
+    });
+
     it('sandboxes iframe-based preview renderers', () => {
         render(<PreviewShell item={itemById('pdf:contract')} />);
 
@@ -208,6 +251,7 @@ describe('PreviewShell', () => {
         const dialog = screen.getByRole('dialog');
         const closeButton = screen.getByLabelText('Close preview');
         expect(dialog).toBeTruthy();
+        expect(dialog.getAttribute('aria-label')).toBe('hero-photo.jpg');
         expect(screen.getByTestId('preview-image')).toBeTruthy();
         expect(document.activeElement).toBe(closeButton);
         expect((closeButton as HTMLElement).style.height).toBe('44px');
