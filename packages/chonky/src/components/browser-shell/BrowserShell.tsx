@@ -1,4 +1,16 @@
-import React, { CSSProperties, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    DndContext,
+    DragOverlay,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useDraggable,
+    useDroppable,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import React, { CSSProperties, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type {
     BrowserAction,
@@ -16,6 +28,17 @@ import type {
     BrowserSortState,
     BrowserViewMode,
 } from '../../types/browser-shell.types';
+import type {
+    BrowserTransferDropSnapshot,
+    BrowserTransferModifierState,
+    BrowserTransferSourceSnapshot,
+} from '../../types/browser-transfer.types';
+import {
+    BROWSER_FILE_OPERATION_ACTIONS,
+    createBrowserFileOperationEvent,
+    isBrowserActionEnabled,
+} from '../../util/browser-file-operations';
+import { createBrowserTransferIntent } from '../../util/browser-transfer';
 
 const DEFAULT_SORT: BrowserSortState = { key: 'name', direction: 'asc' };
 let browserShellInstanceCounter = 0;
@@ -27,10 +50,22 @@ interface ContextMenuState {
     y: number;
 }
 
+interface BrowserDndSourceData {
+    type: 'browser-transfer-source';
+    source: BrowserTransferSourceSnapshot;
+}
+
+interface BrowserDndDropData {
+    type: 'browser-transfer-drop';
+    drop: BrowserTransferDropSnapshot;
+}
+
 const isDisabled = (item: BrowserItem): boolean => item.flags?.disabled === true;
 const canOpen = (item: BrowserItem): boolean => !isDisabled(item) && item.capabilities?.open !== false;
 const canSelect = (item: BrowserItem): boolean => !isDisabled(item) && item.capabilities?.select !== false;
 const canPreview = (item: BrowserItem): boolean => !isDisabled(item) && item.kind === 'file' && item.capabilities?.preview === true;
+const canDrag = (item: BrowserItem): boolean => !isDisabled(item) && item.capabilities?.drag !== false;
+const canDropInto = (item: BrowserItem): boolean => !isDisabled(item) && item.kind === 'folder' && item.capabilities?.drop !== false;
 
 const browserItemToFolder = (item: BrowserItem): BrowserFolderChainItem => ({
     id: item.id,
@@ -106,14 +141,6 @@ const makeSelection = (
 const isActionForPlacement = (action: BrowserAction, placement: 'toolbar' | 'context-menu'): boolean =>
     !action.placement || action.placement.includes(placement);
 
-const isActionEnabled = (action: BrowserAction, selectedCount: number): boolean => {
-    if (action.disabled) return false;
-    if (action.selectionScope === 'none') return selectedCount === 0;
-    if (action.selectionScope === 'single') return selectedCount === 1;
-    if (action.selectionScope === 'multiple') return selectedCount > 1;
-    return true;
-};
-
 const isInteractiveKeyboardTarget = (target: EventTarget | null): boolean => {
     if (!(target instanceof HTMLElement)) return false;
     return Boolean(target.closest('button,input,select,textarea,a,[contenteditable="true"],[role="textbox"],[role="combobox"]'));
@@ -124,6 +151,25 @@ const createBrowserShellDomId = (): string => {
     browserShellInstanceCounter += 1;
     return `browser-shell-${browserShellInstanceCounter}`;
 };
+
+const toDndId = (prefix: string, value: BrowserOpaqueId): string => `${prefix}:${value}`;
+
+const modifierStateFromKeyboardEvent = (event: globalThis.KeyboardEvent): BrowserTransferModifierState => ({
+    altKey: event.altKey,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    shiftKey: event.shiftKey,
+});
+
+const isBrowserDndSourceData = (value: unknown): value is BrowserDndSourceData =>
+    typeof value === 'object' &&
+    value !== null &&
+    (value as BrowserDndSourceData).type === 'browser-transfer-source';
+
+const isBrowserDndDropData = (value: unknown): value is BrowserDndDropData =>
+    typeof value === 'object' &&
+    value !== null &&
+    (value as BrowserDndDropData).type === 'browser-transfer-drop';
 
 const createActionEvent = (
     action: BrowserAction,
@@ -148,7 +194,7 @@ const selectedItemsForSelection = (selection: BrowserSelection, items: readonly 
 
 export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     const {
-        actions = [],
+        actions = BROWSER_FILE_OPERATION_ACTIONS,
         className,
         defaultSelection,
         defaultSort = DEFAULT_SORT,
@@ -158,10 +204,12 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
         items,
         onAction,
         onNavigateFolder,
+        onFileOperation,
         onOpen,
         onPreview,
         onSelectionChange,
         onSortChange,
+        onTransferIntent,
         onViewModeChange,
         renderContextMenu,
         renderThumbnail,
@@ -177,14 +225,22 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
         defaultSelection ?? makeSelection([])
     );
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+    const [activeTransferSource, setActiveTransferSource] = useState<BrowserTransferSourceSnapshot | null>(null);
+    const modifierStateRef = useRef<BrowserTransferModifierState>({});
     const shellId = useMemo(createBrowserShellDomId, []);
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor)
+    );
 
     const currentViewMode = viewMode ?? internalViewMode;
     const currentSort = sort ?? internalSort;
     const currentSelection = selection ?? internalSelection;
+    const dndEnabled = Boolean(onTransferIntent);
     const visibleItems = useMemo(() => sortItems(items.filter((item) => !item.flags?.hidden), currentSort), [items, currentSort]);
     const selectedIdSet = useMemo(() => new Set(currentSelection.selectedIds), [currentSelection.selectedIds]);
     const selectedItems = useMemo(() => selectedItemsForSelection(currentSelection, visibleItems), [currentSelection, visibleItems]);
+    const currentFolder = folderChain[folderChain.length - 1];
     const focusedIndex = useMemo(
         () => visibleItems.findIndex((item) => item.id === currentSelection.focusedId),
         [currentSelection.focusedId, visibleItems]
@@ -291,11 +347,47 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     const triggerAction = useCallback(
         (action: BrowserAction, item?: BrowserItem, actionSelection = currentSelection) => {
             const event = createActionEvent(action, actionSelection, visibleItems, item);
-            if (!isActionEnabled(action, event.selectedItems.length)) return;
+            if (!isBrowserActionEnabled(action, event.selectedItems, item)) return;
             onAction?.(event);
+            const operationEvent = createBrowserFileOperationEvent({
+                action,
+                item,
+                selectedItems: event.selectedItems,
+                selection: event.selection,
+            });
+            if (operationEvent) onFileOperation?.(operationEvent);
             setContextMenu(null);
         },
-        [currentSelection, onAction, visibleItems]
+        [currentSelection, onAction, onFileOperation, visibleItems]
+    );
+
+    const handleDragStart = useCallback((event: DragStartEvent) => {
+        const data = event.active.data.current;
+        if (!isBrowserDndSourceData(data)) return;
+        modifierStateRef.current = {};
+        setActiveTransferSource(data.source);
+    }, []);
+
+    const clearActiveTransfer = useCallback(() => {
+        modifierStateRef.current = {};
+        setActiveTransferSource(null);
+    }, []);
+
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const sourceData = event.active.data.current;
+            const dropData = event.over?.data.current;
+            const intent = isBrowserDndSourceData(sourceData) && isBrowserDndDropData(dropData)
+                ? createBrowserTransferIntent({
+                      source: sourceData.source,
+                      drop: dropData.drop,
+                      modifiers: modifierStateRef.current,
+                  })
+                : null;
+            clearActiveTransfer();
+            if (intent) onTransferIntent?.(intent);
+        },
+        [clearActiveTransfer, onTransferIntent]
     );
 
     const handleItemClick = useCallback(
@@ -374,6 +466,23 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
         return () => document.removeEventListener('click', close);
     }, [contextMenu]);
 
+    useEffect(() => {
+        if (!activeTransferSource || typeof globalThis.window === 'undefined') return undefined;
+        const browserWindow = globalThis.window;
+        const updateModifierState = (event: globalThis.KeyboardEvent) => {
+            modifierStateRef.current = modifierStateFromKeyboardEvent(event);
+        };
+        // Browsers do not expose already-held modifier keys globally; seed a
+        // neutral browser event before live key events take over.
+        modifierStateRef.current = modifierStateFromKeyboardEvent(new browserWindow.KeyboardEvent('keydown'));
+        browserWindow.addEventListener('keydown', updateModifierState);
+        browserWindow.addEventListener('keyup', updateModifierState);
+        return () => {
+            browserWindow.removeEventListener('keydown', updateModifierState);
+            browserWindow.removeEventListener('keyup', updateModifierState);
+        };
+    }, [activeTransferSource]);
+
     const toolbarProps: BrowserShellToolbarRenderProps = {
         actions,
         selectedItems,
@@ -406,93 +515,120 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
             style={styles.shell}
             tabIndex={0}
         >
-            <nav aria-label="Folder path" style={styles.folderChain}>
-                {folderChain.map((folder, index) => (
-                    <React.Fragment key={folder.id}>
-                        <button
-                            disabled={folder.flags?.disabled}
-                            onClick={() => onNavigateFolder?.({ folder, folderId: folder.id })}
-                            style={styles.breadcrumbButton}
-                            type="button"
-                        >
-                            {folder.name}
-                        </button>
-                        {index < folderChain.length - 1 ? <span style={styles.breadcrumbSeparator}>/</span> : null}
-                    </React.Fragment>
-                ))}
-            </nav>
-
-            {renderToolbar ? renderToolbar(toolbarProps) : (
-                <DefaultToolbar
-                    actions={actions}
-                    selectedCount={selectedItems.length}
-                    sort={currentSort}
-                    triggerAction={(action) => triggerAction(action)}
-                    viewMode={currentViewMode}
-                    onSortChange={applySort}
-                    onViewModeChange={applyViewMode}
-                />
-            )}
-
-            {visibleItems.length === 0 ? (
-                <div style={styles.emptyState}>{emptyState ?? 'No files'}</div>
-            ) : (
-                <div
-                    aria-label="Files"
-                    data-item-count={visibleItems.length}
-                    data-view-mode={currentViewMode}
-                    role={currentViewMode === 'grid' ? 'grid' : 'list'}
-                    style={currentViewMode === 'grid' ? styles.grid : styles.list}
-                >
-                    {visibleItems.map((item) => (
-                        <BrowserShellItem
-                            key={item.id}
-                            domId={itemDomId(item.id)}
-                            focused={item.id === currentSelection.focusedId}
-                            item={item}
-                            renderThumbnail={renderThumbnail}
-                            selected={selectedIdSet.has(item.id)}
-                            viewMode={currentViewMode}
-                            onContextMenu={(event) => {
-                                event.preventDefault();
-                                let nextSelection = currentSelection;
-                                if (!selectedIdSet.has(item.id)) {
-                                    nextSelection = canSelect(item)
-                                        ? makeSelection([item.id], item.id, item.id)
-                                        : makeSelection(currentSelection.selectedIds, item.id, currentSelection.anchorId);
-                                    applySelection(nextSelection);
-                                }
-                                setContextMenu({ item, selection: nextSelection, x: event.clientX, y: event.clientY });
-                            }}
-                            onClick={(event) => handleItemClick(event, item)}
-                            onDoubleClick={() => openItem(item)}
-                            onOpen={() => openItem(item)}
-                            onPreview={() => previewItem(item)}
-                            onToggleSelection={() => toggleSelection(item)}
-                        />
+            <DndContext
+                collisionDetection={closestCenter}
+                sensors={sensors}
+                onDragCancel={clearActiveTransfer}
+                onDragEnd={handleDragEnd}
+                onDragStart={handleDragStart}
+            >
+                <nav aria-label="Folder path" style={styles.folderChain}>
+                    {folderChain.map((folder, index) => (
+                        <React.Fragment key={folder.id}>
+                            <button
+                                disabled={folder.flags?.disabled}
+                                onClick={() => onNavigateFolder?.({ folder, folderId: folder.id })}
+                                style={styles.breadcrumbButton}
+                                type="button"
+                            >
+                                {folder.name}
+                            </button>
+                            {index < folderChain.length - 1 ? <span style={styles.breadcrumbSeparator}>/</span> : null}
+                        </React.Fragment>
                     ))}
-                </div>
-            )}
+                </nav>
 
-            {contextMenu && contextMenuProps ? (
-                <div
-                    data-testid="browser-context-menu"
-                    role="menu"
-                    style={{
-                        ...styles.contextMenu,
-                        left: contextMenu.x,
-                        top: contextMenu.y,
-                    }}
+                {renderToolbar ? renderToolbar(toolbarProps) : (
+                    <DefaultToolbar
+                        actions={actions}
+                        selectedItems={selectedItems}
+                        sort={currentSort}
+                        triggerAction={(action) => triggerAction(action)}
+                        viewMode={currentViewMode}
+                        onSortChange={applySort}
+                        onViewModeChange={applyViewMode}
+                    />
+                )}
+
+                <BrowserListingDropTarget
+                    currentFolder={currentFolder}
+                    enabled={dndEnabled}
+                    itemCount={visibleItems.length}
+                    viewMode={currentViewMode}
                 >
-                    {renderContextMenu ? renderContextMenu(contextMenuProps) : (
-                        <DefaultContextMenu
-                            actions={actions}
-                            selectedCount={selectedItemsForSelection(contextMenu.selection, visibleItems).length}
-                            triggerAction={(action) => triggerAction(action, contextMenu.item, contextMenu.selection)}
-                        />
-                    )}
-                </div>
-            ) : null}
+                    {visibleItems.length === 0 ? (
+                        <div style={styles.emptyState}>{emptyState ?? 'No files'}</div>
+                    ) : visibleItems.map((item) => {
+                        const selected = selectedIdSet.has(item.id);
+                        const transferSelection = selected
+                            ? currentSelection
+                            : makeSelection([item.id], item.id, item.id);
+                        const transferItems = selected && selectedItems.length > 0 ? selectedItems : [item];
+
+                        return (
+                            <BrowserShellItem
+                                key={item.id}
+                                dndEnabled={dndEnabled}
+                                domId={itemDomId(item.id)}
+                                focused={item.id === currentSelection.focusedId}
+                                item={item}
+                                renderThumbnail={renderThumbnail}
+                                selected={selected}
+                                transferItems={transferItems}
+                                transferSelection={transferSelection}
+                                viewMode={currentViewMode}
+                                onContextMenu={(event) => {
+                                    event.preventDefault();
+                                    let nextSelection = currentSelection;
+                                    if (!selectedIdSet.has(item.id)) {
+                                        nextSelection = canSelect(item)
+                                            ? makeSelection([item.id], item.id, item.id)
+                                            : makeSelection(currentSelection.selectedIds, item.id, currentSelection.anchorId);
+                                        applySelection(nextSelection);
+                                    }
+                                    setContextMenu({ item, selection: nextSelection, x: event.clientX, y: event.clientY });
+                                }}
+                                onClick={(event) => handleItemClick(event, item)}
+                                onDoubleClick={() => openItem(item)}
+                                onOpen={() => openItem(item)}
+                                onPreview={() => previewItem(item)}
+                                onToggleSelection={() => toggleSelection(item)}
+                            />
+                        );
+                    })}
+                </BrowserListingDropTarget>
+
+                {contextMenu && contextMenuProps ? (
+                    <div
+                        data-testid="browser-context-menu"
+                        role="menu"
+                        style={{
+                            ...styles.contextMenu,
+                            left: contextMenu.x,
+                            top: contextMenu.y,
+                        }}
+                    >
+                        {renderContextMenu ? renderContextMenu(contextMenuProps) : (
+                            <DefaultContextMenu
+                                actions={actions}
+                                item={contextMenu.item}
+                                selectedItems={selectedItemsForSelection(contextMenu.selection, visibleItems)}
+                                triggerAction={(action) => triggerAction(action, contextMenu.item, contextMenu.selection)}
+                            />
+                        )}
+                    </div>
+                ) : null}
+
+                <DragOverlay>
+                    {activeTransferSource ? (
+                        <div style={styles.dragOverlay}>
+                            {activeTransferSource.selectedItems.length > 1
+                                ? `${activeTransferSource.selectedItems.length} items`
+                                : activeTransferSource.item.name}
+                        </div>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
         </div>
     );
 });
@@ -500,7 +636,7 @@ BrowserShell.displayName = 'BrowserShell';
 
 interface DefaultToolbarProps {
     actions: readonly BrowserAction[];
-    selectedCount: number;
+    selectedItems: readonly BrowserItem[];
     sort: BrowserSortState;
     triggerAction: (action: BrowserAction) => void;
     viewMode: BrowserViewMode;
@@ -509,7 +645,7 @@ interface DefaultToolbarProps {
 }
 
 const DefaultToolbar: React.FC<DefaultToolbarProps> = (props) => {
-    const { actions, onSortChange, onViewModeChange, selectedCount, sort, triggerAction, viewMode } = props;
+    const { actions, onSortChange, onViewModeChange, selectedItems, sort, triggerAction, viewMode } = props;
     const toolbarActions = actions.filter((action) => isActionForPlacement(action, 'toolbar'));
 
     return (
@@ -557,7 +693,7 @@ const DefaultToolbar: React.FC<DefaultToolbarProps> = (props) => {
             {toolbarActions.map((action) => (
                 <button
                     key={action.id}
-                    disabled={!isActionEnabled(action, selectedCount)}
+                    disabled={!isBrowserActionEnabled(action, selectedItems)}
                     onClick={() => triggerAction(action)}
                     style={action.tone === 'destructive' ? styles.destructiveButton : styles.button}
                     type="button"
@@ -571,12 +707,13 @@ const DefaultToolbar: React.FC<DefaultToolbarProps> = (props) => {
 
 interface DefaultContextMenuProps {
     actions: readonly BrowserAction[];
-    selectedCount: number;
+    item: BrowserItem;
+    selectedItems: readonly BrowserItem[];
     triggerAction: (action: BrowserAction) => void;
 }
 
 const DefaultContextMenu: React.FC<DefaultContextMenuProps> = (props) => {
-    const { actions, selectedCount, triggerAction } = props;
+    const { actions, item, selectedItems, triggerAction } = props;
     const contextActions = actions.filter((action) => isActionForPlacement(action, 'context-menu'));
 
     if (contextActions.length === 0) return <div style={styles.menuEmpty}>No actions</div>;
@@ -586,7 +723,7 @@ const DefaultContextMenu: React.FC<DefaultContextMenuProps> = (props) => {
             {contextActions.map((action) => (
                 <button
                     key={action.id}
-                    disabled={!isActionEnabled(action, selectedCount)}
+                    disabled={!isBrowserActionEnabled(action, selectedItems, item)}
                     onClick={() => triggerAction(action)}
                     role="menuitem"
                     style={action.tone === 'destructive' ? styles.menuItemDestructive : styles.menuItem}
@@ -599,12 +736,63 @@ const DefaultContextMenu: React.FC<DefaultContextMenuProps> = (props) => {
     );
 };
 
+interface BrowserListingDropTargetProps {
+    children: React.ReactNode;
+    currentFolder?: BrowserFolderChainItem;
+    enabled: boolean;
+    itemCount: number;
+    viewMode: BrowserViewMode;
+}
+
+const BrowserListingDropTarget: React.FC<BrowserListingDropTargetProps> = (props) => {
+    const { children, currentFolder, enabled, itemCount, viewMode } = props;
+    const dropData = useMemo<BrowserDndDropData>(
+        () => ({
+            type: 'browser-transfer-drop',
+            drop: {
+                target: {
+                    kind: 'listing',
+                    folder: currentFolder,
+                    folderId: currentFolder?.id,
+                },
+            },
+        }),
+        [currentFolder]
+    );
+    const { isOver, setNodeRef } = useDroppable({
+        id: currentFolder ? toDndId('browser-listing', currentFolder.id) : 'browser-listing:empty',
+        disabled: !enabled || !currentFolder || currentFolder.flags?.disabled === true,
+        data: dropData,
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            aria-label="Files"
+            data-dnd-droppable={enabled && currentFolder ? 'true' : 'false'}
+            data-dnd-over={isOver ? 'true' : 'false'}
+            data-item-count={itemCount}
+            data-view-mode={viewMode}
+            role={viewMode === 'grid' ? 'grid' : 'list'}
+            style={{
+                ...(viewMode === 'grid' ? styles.grid : styles.list),
+                ...(isOver ? styles.dropTargetOver : null),
+            }}
+        >
+            {children}
+        </div>
+    );
+};
+
 interface BrowserShellItemProps {
+    dndEnabled: boolean;
     domId: string;
     focused: boolean;
     item: BrowserItem;
     renderThumbnail?: (item: BrowserItem) => React.ReactNode;
     selected: boolean;
+    transferItems: readonly BrowserItem[];
+    transferSelection: BrowserSelection;
     viewMode: BrowserViewMode;
     onClick: (event: MouseEvent) => void;
     onContextMenu: (event: MouseEvent) => void;
@@ -615,15 +803,91 @@ interface BrowserShellItemProps {
 }
 
 const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
-    const { domId, focused, item, onClick, onContextMenu, onDoubleClick, onOpen, onPreview, onToggleSelection, renderThumbnail, selected, viewMode } = props;
+    const {
+        dndEnabled,
+        domId,
+        focused,
+        item,
+        onClick,
+        onContextMenu,
+        onDoubleClick,
+        onOpen,
+        onPreview,
+        onToggleSelection,
+        renderThumbnail,
+        selected,
+        transferItems,
+        transferSelection,
+        viewMode,
+    } = props;
     const disabled = isDisabled(item);
     const thumbnailUrl = getAvailableThumbnail(item);
     const itemStyle = viewMode === 'grid' ? styles.gridItem : styles.listItem;
+    const draggableDisabled = !dndEnabled || !canDrag(item);
+    const droppableDisabled = !dndEnabled || !canDropInto(item);
+    const sourceData = useMemo<BrowserDndSourceData>(
+        () => ({
+            type: 'browser-transfer-source',
+            source: {
+                item,
+                selectedItems: transferItems,
+                selection: transferSelection,
+            },
+        }),
+        [item, transferItems, transferSelection]
+    );
+    const dropData = useMemo<BrowserDndDropData>(
+        () => ({
+            type: 'browser-transfer-drop',
+            drop: {
+                target: {
+                    kind: 'folder',
+                    folder: browserItemToFolder(item),
+                    folderId: item.id,
+                    item,
+                },
+            },
+        }),
+        [item]
+    );
+    const {
+        attributes,
+        isDragging,
+        listeners,
+        setNodeRef: setDraggableNodeRef,
+        transform,
+    } = useDraggable({
+        id: toDndId('browser-item', item.id),
+        disabled: draggableDisabled,
+        data: sourceData,
+    });
+    const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({
+        id: toDndId('browser-folder-target', item.id),
+        disabled: droppableDisabled,
+        data: dropData,
+    });
+    const setNodeRef = useCallback(
+        (node: HTMLElement | null) => {
+            setDraggableNodeRef(node);
+            setDroppableNodeRef(node);
+        },
+        [setDraggableNodeRef, setDroppableNodeRef]
+    );
+    const transformStyle = transform
+        ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
+        : undefined;
 
     return (
         <div
+            ref={setNodeRef}
+            {...(draggableDisabled ? {} : attributes)}
+            {...(draggableDisabled ? {} : listeners)}
             aria-disabled={disabled}
             aria-selected={selected}
+            data-dnd-draggable={draggableDisabled ? 'false' : 'true'}
+            data-dnd-droppable={droppableDisabled ? 'false' : 'true'}
+            data-dnd-over={isOver ? 'true' : 'false'}
+            data-dnd-source-count={transferItems.length}
             data-focused={focused ? 'true' : 'false'}
             data-testid="browser-item"
             id={domId}
@@ -646,6 +910,9 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
                 ...(selected ? styles.selectedItem : null),
                 ...(focused ? styles.focusedItem : null),
                 ...(disabled ? styles.disabledItem : null),
+                ...(isDragging ? styles.draggingItem : null),
+                ...(isOver ? styles.dropTargetOver : null),
+                transform: transformStyle,
             }}
             tabIndex={focused ? 0 : -1}
         >
@@ -734,6 +1001,22 @@ const styles: Record<string, CSSProperties> = {
     disabledItem: {
         cursor: 'not-allowed',
         opacity: 0.48,
+    },
+    draggingItem: {
+        opacity: 0.42,
+        zIndex: 2,
+    },
+    dragOverlay: {
+        background: '#111827',
+        borderRadius: 999,
+        boxShadow: '0 16px 40px rgba(15, 23, 42, 0.22)',
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: 600,
+        padding: '8px 12px',
+    },
+    dropTargetOver: {
+        boxShadow: 'inset 0 0 0 2px #2563eb',
     },
     emptyState: {
         alignItems: 'center',

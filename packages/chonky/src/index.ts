@@ -7,7 +7,7 @@ export { FileToolbar } from './components/external/FileToolbar';
 export { FileList } from './components/file-list/FileList';
 export { FileContextMenu } from './components/external/FileContextMenu';
 export { FullFileBrowser } from './components/external/FullFileBrowser';
-export { BrowserShell } from './components/browser-shell/BrowserShell';
+export * from './browser';
 export { FilePreviewer, defaultPreviewRenderers } from './components/preview/FilePreviewer';
 export { MediaLightbox } from './components/preview/MediaLightbox';
 export { PreviewFallback } from './components/preview/PreviewFallback';
@@ -35,43 +35,6 @@ export type FileViewConfig = import('./types/file-view.types').FileViewConfig;
 export type FileViewConfigGrid = import('./types/file-view.types').FileViewConfigGrid;
 export type FileViewConfigList = import('./types/file-view.types').FileViewConfigList;
 export { ThumbnailGenerator } from './types/thumbnails.types';
-export { createBrowserOpaqueId } from './types/browser-item.types';
-export type {
-    BrowserAction,
-    BrowserActionPlacement,
-    BrowserActionSelectionScope,
-    BrowserActionTone,
-    BrowserFolderChainItem,
-    BrowserItem,
-    BrowserItemCapabilities,
-    BrowserItemFlags,
-    BrowserItemKind,
-    BrowserItemRef,
-    BrowserMetadataValue,
-    BrowserOpaqueId,
-    BrowserPreviewAsset,
-    BrowserPreviewAssetKind,
-    BrowserPreviewRenderer,
-    BrowserPreviewTrack,
-    BrowserPreviewTrackKind,
-    BrowserPreviewUnavailableReason,
-    BrowserSelection,
-    BrowserSourceDescriptor,
-    BrowserSourceKind,
-    PreviewDescriptor,
-} from './types/browser-item.types';
-export type {
-    BrowserShellActionEvent,
-    BrowserShellContextMenuRenderProps,
-    BrowserShellItemEvent,
-    BrowserShellNavigateEvent,
-    BrowserShellProps,
-    BrowserShellToolbarRenderProps,
-    BrowserSortDirection,
-    BrowserSortKey,
-    BrowserSortState,
-    BrowserViewMode,
-} from './types/browser-shell.types';
 export type {
     AvailableBrowserPreviewAsset,
     FilePreviewerProps,
@@ -88,13 +51,6 @@ export type {
     PreviewShellProps,
     PreviewTileProps,
 } from './types/preview-shell.types';
-export {
-    browserActionFixtures,
-    browserFolderChainFixtures,
-    browserItemFixtures,
-    browserSelectionFixture,
-    browserSourceFixtures,
-} from './fixtures/browser-items';
 export {
     adaptBrowserFolderChainToFileArray,
     adaptBrowserItemToFileData,
