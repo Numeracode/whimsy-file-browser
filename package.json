@@ -6,11 +6,11 @@
     "packages/chonky-icon-fontawesome"
   ],
   "scripts": {
-    "build": "npm run build --workspace chonky && npm run build --workspace chonky-icon-fontawesome",
+    "build": "npm run build --workspace packages/chonky && npm run build --workspace packages/chonky-icon-fontawesome",
     "clean": "npm run clean --workspaces --if-present",
     "lint": "npm run typecheck",
-    "test": "npm run build --workspace chonky && npm run test --workspace chonky && npm run test --workspace chonky-icon-fontawesome",
-    "typecheck": "npm run typecheck --workspace chonky && npm run build --workspace chonky && npm run typecheck --workspace chonky-icon-fontawesome"
+    "test": "npm run build --workspace packages/chonky && npm run test --workspace packages/chonky && npm run test --workspace packages/chonky-icon-fontawesome",
+    "typecheck": "npm run typecheck --workspace packages/chonky && npm run build --workspace packages/chonky && npm run typecheck --workspace packages/chonky-icon-fontawesome"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.2",

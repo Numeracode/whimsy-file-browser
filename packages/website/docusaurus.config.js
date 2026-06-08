@@ -1,20 +1,20 @@
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
-const chonkyPackage =  require( 'chonky/package.json');
+const chonkyPackage = require('@numeracode/whimsy-file-browser/package.json');
 module.exports = {
-  title: 'Chonky',
+  title: 'Whimsy File Browser',
   tagline: 'A File Browser for React',
-  url: 'https://chonky.io/',
+  url: 'https://github.com',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.png',
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'Numeracode',
+  projectName: 'whimsy-file-browser',
   themeConfig: {
     navbar: {
-      title: `Chonky v${chonkyPackage.version}`,
+      title: `Whimsy File Browser v${chonkyPackage.version}`,
       logo: {
-        alt: 'Chonky',
+        alt: 'Whimsy File Browser',
         src: 'img/chonky-sphere-v2.png',
       },
       items: [
@@ -25,7 +25,7 @@ module.exports = {
           label: 'Docs',
         },
         {
-          href: 'https://github.com/TimboKZ/Chonky',
+          href: 'https://github.com/Numeracode/whimsy-file-browser',
           label: 'GitHub',
           position: 'right',
         },
@@ -70,12 +70,12 @@ module.exports = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/Numeracode/whimsy-file-browser',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Numeracode. Built with Docusaurus.`,
     },
   },
   plugins: ['@docusaurus/theme-live-codeblock'],
@@ -87,13 +87,13 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl:
-            'https://github.com/facebook/docusaurus/edit/master/website/',
+            'https://github.com/Numeracode/whimsy-file-browser/edit/2.x/packages/website/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           editUrl:
-            'https://github.com/facebook/docusaurus/edit/master/website/blog/',
+            'https://github.com/Numeracode/whimsy-file-browser/edit/2.x/packages/website/blog/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

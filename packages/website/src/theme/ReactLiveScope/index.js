@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { FullFileBrowser } from 'chonky';
+import { FullFileBrowser } from '@numeracode/whimsy-file-browser';
 
 // Add react-live imports you need here
 const ReactLiveScope = {

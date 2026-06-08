@@ -1,7 +1,7 @@
 {
-  "name": "chonky-icon-fontawesome",
+  "name": "@numeracode/whimsy-file-browser-icons",
   "version": "2.3.2",
-  "description": "FontAwesome icon component for Chonky file browser",
+  "description": "FontAwesome icon component for the Numeracode Whimsy file browser",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -18,19 +18,22 @@
     "dist",
     "src"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --dts-resolve --sourcemap --clean --external react --external react-dom --external chonky",
+    "build": "tsup src/index.ts --format cjs,esm --dts --dts-resolve --sourcemap --clean --external react --external react-dom --external @numeracode/whimsy-file-browser",
     "clean": "rm -rf dist",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --sourcemap --watch --external react --external react-dom --external chonky",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --sourcemap --watch --external react --external react-dom --external @numeracode/whimsy-file-browser",
     "lint": "npm run typecheck",
     "test": "vitest run --passWithNoTests --globals --environment jsdom",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "react": ">=16"
+    "react": ">=16.8"
   },
   "prettier": {
     "trailingComma": "es5",
@@ -52,14 +55,13 @@
     "@fortawesome/free-brands-svg-icons": "^6.7.0",
     "@fortawesome/free-solid-svg-icons": "^6.7.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
-    "chonky": "^2.3.2",
+    "@numeracode/whimsy-file-browser": "^2.3.2",
     "tslib": "^2.8.1"
   },
-  "homepage": "https://chonky.io/",
+  "homepage": "https://github.com/Numeracode/whimsy-file-browser",
   "author": {
-    "name": "Timur Kuzhagaliyev",
-    "email": "tim.kuzh@gmail.com",
-    "url": "https://foxypanda.me/"
+    "name": "Numeracode",
+    "url": "https://github.com/Numeracode"
   },
   "repository": {
     "type": "git",
@@ -70,9 +72,9 @@
   },
   "keywords": [
     "file",
-    "chonky",
-    "file-dialog",
+    "whimsy",
     "file-browser",
+    "file-dialog",
     "react-component"
   ]
 }

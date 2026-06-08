@@ -1,20 +1,21 @@
-# `chonky-icon-fontawesome`
+# `@numeracode/whimsy-file-browser-icons`
 
-This package contains the icon component for [Chonky][chonky], a file browser component
-for React. Please refer to [the official documentation][docs] for usage instructions.
+FontAwesome icon adapter for `@numeracode/whimsy-file-browser`.
 
-## Usage
-
-```shell
-npm install chonky@latest chonky-icon-fontawesome@latest
+```bash
+npm install @numeracode/whimsy-file-browser @numeracode/whimsy-file-browser-icons
 ```
 
 ```ts
-import { setChonkyDefaults } from 'chonky';
-import { ChonkyIconFA } from 'chonky-icon-fontawesome';
-// Somewhere in your `index.ts`:
+import { setChonkyDefaults } from '@numeracode/whimsy-file-browser';
+import { ChonkyIconFA } from '@numeracode/whimsy-file-browser-icons';
+
 setChonkyDefaults({ iconComponent: ChonkyIconFA });
 ```
 
-[chonky]: https://chonky.io/
-[docs]: https://chonky.io/docs/2.x/installation-usage
+## Upstream Attribution
+
+This package is based on the MIT-licensed Chonky FontAwesome adapter:
+<https://github.com/TimboKZ/Chonky>.
+
+Original copyright notices are retained in `LICENSE` and source headers.
