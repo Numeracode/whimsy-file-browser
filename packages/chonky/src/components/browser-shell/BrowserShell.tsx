@@ -49,8 +49,15 @@ const getAvailableThumbnail = (item: BrowserItem): string | null => {
 };
 
 const compareOptionalNumber = (left?: number, right?: number) => (left ?? -1) - (right ?? -1);
+
+const toSortableTimestamp = (value?: string): number => {
+    if (!value) return -1;
+    const timestamp = new Date(value).getTime();
+    return Number.isFinite(timestamp) ? timestamp : -1;
+};
+
 const compareOptionalDate = (left?: string, right?: string) =>
-    new Date(left ?? 0).getTime() - new Date(right ?? 0).getTime();
+    toSortableTimestamp(left) - toSortableTimestamp(right);
 
 const sortItems = (items: readonly BrowserItem[], sort: BrowserSortState): readonly BrowserItem[] => {
     const sorted = [...items];
@@ -103,6 +110,11 @@ const isActionEnabled = (action: BrowserAction, selectedCount: number): boolean 
     if (action.selectionScope === 'single') return selectedCount === 1;
     if (action.selectionScope === 'multiple') return selectedCount > 1;
     return true;
+};
+
+const isInteractiveKeyboardTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof HTMLElement)) return false;
+    return Boolean(target.closest('button,input,select,textarea,a,[contenteditable="true"],[role="textbox"],[role="combobox"]'));
 };
 
 const createActionEvent = (
@@ -267,6 +279,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
     const triggerAction = useCallback(
         (action: BrowserAction, item?: BrowserItem) => {
             const event = createActionEvent(action, currentSelection, visibleItems, item);
+            if (!isActionEnabled(action, event.selectedItems.length)) return;
             onAction?.(event);
             setContextMenu(null);
         },
@@ -294,6 +307,8 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent<HTMLDivElement>) => {
+            if (isInteractiveKeyboardTarget(event.target)) return;
+
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
                 event.preventDefault();
                 applySelection(makeSelection(visibleItems.filter(canSelect).map((item) => item.id), currentSelection.focusedId));
@@ -426,7 +441,7 @@ export const BrowserShell: React.FC<BrowserShellProps> = React.memo((props) => {
                             viewMode={currentViewMode}
                             onContextMenu={(event) => {
                                 event.preventDefault();
-                                selectSingle(item);
+                                if (!selectedIdSet.has(item.id)) selectSingle(item);
                                 setContextMenu({ item, x: event.clientX, y: event.clientY });
                             }}
                             onClick={(event) => handleItemClick(event, item)}

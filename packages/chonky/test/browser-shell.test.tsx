@@ -177,4 +177,111 @@ describe('BrowserShell', () => {
             })
         );
     });
+
+    it('keeps modified-date sorting stable for malformed dates', () => {
+        const items: BrowserItem[] = [
+            {
+                ...browserItemFixtures[1],
+                id: createBrowserOpaqueId('invalid-date'),
+                name: 'invalid-date.jpg',
+                modifiedAt: 'not-a-date',
+            },
+            {
+                ...browserItemFixtures[2],
+                id: createBrowserOpaqueId('valid-date'),
+                name: 'valid-date.mp4',
+                modifiedAt: '2026-06-02T00:00:00.000Z',
+            },
+            {
+                ...browserItemFixtures[3],
+                id: createBrowserOpaqueId('missing-date'),
+                name: 'missing-date.pdf',
+                modifiedAt: undefined,
+            },
+        ];
+
+        render(<BrowserShell items={items} defaultSort={{ key: 'modifiedAt', direction: 'asc' }} />);
+
+        const renderedNames = screen.getAllByTestId('browser-item').map((item) => within(item).getByText(/date\./).textContent);
+        expect(renderedNames).toEqual(['invalid-date.jpg', 'missing-date.pdf', 'valid-date.mp4']);
+    });
+
+    it('does not dispatch disabled or invalid-scope custom actions', () => {
+        const onAction = vi.fn();
+        const disabledAction = { ...browserActionFixtures[1], disabled: true };
+        const singleOnlyAction = browserActionFixtures[0];
+
+        render(
+            <BrowserShell
+                actions={[disabledAction, singleOnlyAction]}
+                items={browserItemFixtures}
+                onAction={onAction}
+                renderToolbar={({ actions, triggerAction }) => (
+                    <>
+                        <button type="button" onClick={() => triggerAction(actions[0])}>
+                            Disabled action
+                        </button>
+                        <button type="button" onClick={() => triggerAction(actions[1])}>
+                            Single action
+                        </button>
+                    </>
+                )}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Disabled action'));
+        fireEvent.click(screen.getByText('Single action'));
+
+        expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it('does not hijack keyboard input from interactive toolbar controls', () => {
+        const onSelectionChange = vi.fn();
+
+        render(
+            <BrowserShell
+                defaultSelection={{ selectedIds: [], focusedId: createBrowserOpaqueId('image:hero') }}
+                items={browserItemFixtures}
+                onSelectionChange={onSelectionChange}
+            />
+        );
+
+        const sortSelect = screen.getByLabelText('Sort files');
+        fireEvent.keyDown(sortSelect, { key: 'ArrowDown' });
+        fireEvent.keyDown(sortSelect, { key: 'a', ctrlKey: true });
+
+        expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it('preserves multi-selection when opening a context menu on an already selected item', () => {
+        const onAction = vi.fn();
+        const selection: BrowserSelection = {
+            selectedIds: ['image:hero', 'pdf:contract'].map(createBrowserOpaqueId),
+            focusedId: createBrowserOpaqueId('pdf:contract'),
+            anchorId: createBrowserOpaqueId('image:hero'),
+        };
+
+        render(
+            <BrowserShell
+                actions={browserActionFixtures}
+                items={browserItemFixtures}
+                onAction={onAction}
+                selection={selection}
+            />
+        );
+
+        fireEvent.contextMenu(screen.getByText('hero-photo.jpg'));
+        fireEvent.click(within(screen.getByTestId('browser-context-menu')).getByText('Download'));
+
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actionId: 'download',
+                selectedItems: expect.arrayContaining([
+                    expect.objectContaining({ id: 'image:hero' }),
+                    expect.objectContaining({ id: 'pdf:contract' }),
+                ]),
+                selection: expect.objectContaining({ selectedIds: ['image:hero', 'pdf:contract'] }),
+            })
+        );
+    });
 });
