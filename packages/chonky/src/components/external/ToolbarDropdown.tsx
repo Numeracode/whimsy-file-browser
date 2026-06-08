@@ -4,12 +4,12 @@
  * @license MIT
  */
 
-import Menu from '@material-ui/core/Menu';
 import React, { useCallback, useMemo } from 'react';
 
 import { FileActionGroup } from '../../types/action-menus.types';
 import { useLocalizedFileActionGroup } from '../../util/i18n';
-import { important, makeGlobalChonkyStyles } from '../../util/styles';
+import { makeGlobalChonkyStyles } from '../../util/styles';
+import { ChonkyMenu } from '../internal/ChonkyMenu';
 import { ToolbarButton } from './ToolbarButton';
 import { SmartToolbarDropdownButton } from './ToolbarDropdownButton';
 
@@ -42,25 +42,22 @@ export const ToolbarDropdown: React.FC<ToolbarDropdownProps> = React.memo(props 
     return (
         <>
             <ToolbarButton text={localizedName} onClick={handleClick} dropdown={true} />
-            <Menu
-                autoFocus
-                keepMounted
-                elevation={2}
+            <ChonkyMenu
                 anchorEl={anchor}
                 onClose={handleClose}
                 open={Boolean(anchor)}
-                transitionDuration={150}
-                classes={{ list: classes.dropdownList }}
             >
-                {menuItemComponents}
-            </Menu>
+                <div className={classes.dropdownList}>
+                    {menuItemComponents}
+                </div>
+            </ChonkyMenu>
         </>
     );
 });
 
 const useStyles = makeGlobalChonkyStyles(() => ({
     dropdownList: {
-        paddingBottom: important(0),
-        paddingTop: important(0),
+        paddingBottom: 0,
+        paddingTop: 0,
     },
 }));

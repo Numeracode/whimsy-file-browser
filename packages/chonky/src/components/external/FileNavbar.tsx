@@ -4,11 +4,9 @@
  * @license MIT
  */
 
-import Box from '@material-ui/core/Box';
-import Breadcrumbs from '@material-ui/core/Breadcrumbs';
 import React, { ReactElement, useMemo } from 'react';
 
-import { ChonkyActions } from '../../action-definitions/index';
+import { ChonkyActions } from '../../action-definitions';
 import { important, makeGlobalChonkyStyles } from '../../util/styles';
 import { useFolderChainItems } from './FileNavbar-hooks';
 import { FolderChainButton } from './FolderChainButton';
@@ -22,7 +20,7 @@ export const FileNavbar: React.FC<FileNavbarProps> = React.memo(() => {
 
     const folderChainComponents = useMemo(() => {
         const components: ReactElement[] = [];
-        for (let i = 0; i < folderChainItems.length; ++i) {
+        for (let i = 0; i < folderChainItems.length; i++) {
             const key = `folder-chain-${i}`;
             const component = (
                 <FolderChainButton
@@ -38,17 +36,24 @@ export const FileNavbar: React.FC<FileNavbarProps> = React.memo(() => {
     }, [folderChainItems]);
 
     return (
-        <Box className={classes.navbarWrapper}>
-            <Box className={classes.navbarContainer}>
+        <div className={classes.navbarWrapper}>
+            <div className={classes.navbarContainer}>
                 <SmartToolbarButton fileActionId={ChonkyActions.OpenParentFolder.id} />
-                <Breadcrumbs
-                    className={classes.navbarBreadcrumbs}
-                    classes={{ separator: classes.separator }}
-                >
-                    {folderChainComponents}
-                </Breadcrumbs>
-            </Box>
-        </Box>
+                <nav className={classes.navbarBreadcrumbs}>
+                    {folderChainComponents.map((comp, i) => (
+                        <React.Fragment key={i}>
+                            {i > 0 && (
+                                <span className={classes.separator}
+                                      style={{ marginRight: 4, marginLeft: 4 }}>
+                                    /
+                                </span>
+                            )}
+                            {comp}
+                        </React.Fragment>
+                    ))}
+                </nav>
+            </div>
+        </div>
     );
 });
 
@@ -59,18 +64,14 @@ const useStyles = makeGlobalChonkyStyles(theme => ({
     navbarContainer: {
         display: 'flex',
     },
-    upDirectoryButton: {
-        fontSize: important(theme.toolbar.fontSize),
-        height: theme.toolbar.size,
-        width: theme.toolbar.size,
-        padding: '0px !important',
-    },
     navbarBreadcrumbs: {
-        fontSize: important(theme.toolbar.fontSize),
+        fontSize: theme.toolbar.fontSize,
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
         flexGrow: 100,
     },
     separator: {
-        marginRight: important(4),
-        marginLeft: important(4),
+        color: theme.palette.text.disabled,
     },
 }));

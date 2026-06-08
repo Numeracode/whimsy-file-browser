@@ -4,7 +4,6 @@
  * @license MIT
  */
 
-import Button from '@material-ui/core/Button';
 import React, { useContext } from 'react';
 import { Nullable } from 'tsdef';
 
@@ -61,7 +60,8 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = React.memo(props => {
         [classes.activeButton]: !!active,
     });
     return (
-        <Button
+        <button
+            type="button"
             className={className}
             onClick={onClick}
             title={tooltip ? tooltip : text}
@@ -77,7 +77,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = React.memo(props => {
                     />
                 </div>
             )}
-        </Button>
+        </button>
     );
 });
 
@@ -91,6 +91,21 @@ const useStyles = makeGlobalChonkyStyles(theme => ({
         height: theme.toolbar.size,
         paddingBottom: important(0),
         paddingTop: important(0),
+        // Reset button styles
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        '&:disabled': {
+            opacity: 0.5,
+            cursor: 'default',
+        },
+        '&:hover:not(:disabled)': {
+            backgroundColor: 'rgba(0,0,0,0.04)',
+        },
     },
     iconWithText: {
         marginRight: 8,

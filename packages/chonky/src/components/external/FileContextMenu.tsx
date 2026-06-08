@@ -8,13 +8,11 @@ import React, { ReactElement, useEffect, useMemo } from 'react';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 
-import ListSubheader from '@material-ui/core/ListSubheader';
-import Menu from '@material-ui/core/Menu';
-
 import { reduxActions } from '../../redux/reducers';
 import { selectContextMenuConfig, selectContextMenuItems } from '../../redux/selectors';
 import { getI18nId, I18nNamespace } from '../../util/i18n';
 import { important, makeGlobalChonkyStyles } from '../../util/styles';
+import { ChonkyMenu } from '../internal/ChonkyMenu';
 import { useContextMenuDismisser } from './FileContextMenu-hooks';
 import { SmartToolbarDropdownButton } from './ToolbarDropdownButton';
 
@@ -77,21 +75,18 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = React.memo(() => 
 
     const classes = useStyles();
     return (
-        <Menu
-            elevation={2}
-            disablePortal
-            onClose={hideContextMenu}
-            transitionDuration={150}
+        <ChonkyMenu
             open={!!contextMenuConfig}
             anchorPosition={anchorPosition}
-            anchorReference="anchorPosition"
-            classes={{ list: classes.contextMenuList }}
+            onClose={hideContextMenu}
         >
-            {contextMenuItemComponents}
-            <ListSubheader component="div" className={classes.browserMenuTooltip}>
-                {browserMenuShortcutString}
-            </ListSubheader>
-        </Menu>
+            <div className={classes.contextMenuList}>
+                {contextMenuItemComponents}
+                <div className={classes.browserMenuTooltip}>
+                    {browserMenuShortcutString}
+                </div>
+            </div>
+        </ChonkyMenu>
     );
 });
 
@@ -103,5 +98,7 @@ const useStyles = makeGlobalChonkyStyles(() => ({
     browserMenuTooltip: {
         lineHeight: important('30px'),
         fontSize: important('0.7em'),
+        padding: '0 16px',
+        opacity: 0.7,
     },
 }));

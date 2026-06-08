@@ -8,9 +8,6 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 
-import InputAdornment from '@material-ui/core/InputAdornment';
-import TextField from '@material-ui/core/TextField';
-
 import { reduxActions } from '../../redux/reducers';
 import { selectSearchString } from '../../redux/selectors';
 import { ChonkyIconName } from '../../types/icons.types';
@@ -31,7 +28,7 @@ export const ToolbarSearch: React.FC<ToolbarSearchProps> = React.memo(() => {
     const classes = useStyles();
     const ChonkyIcon = useContext(ChonkyIconContext);
 
-    const searchInputRef = useRef<HTMLInputElement>();
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     const dispatch = useDispatch();
     const reduxSearchString = useSelector(selectSearchString);
@@ -56,16 +53,12 @@ export const ToolbarSearch: React.FC<ToolbarSearchProps> = React.memo(() => {
         dispatch(reduxActions.setSearchString(debouncedLocalSearchString));
     }, [debouncedLocalSearchString, dispatch]);
 
-    const handleChange = useCallback((event: React.FormEvent<HTMLInputElement>) => {
+    const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setShowLoadingIndicator(true);
         setLocalSearchString(event.currentTarget.value);
     }, []);
     const handleKeyUp = useCallback(
         (event: React.KeyboardEvent<HTMLInputElement>) => {
-            // Remove focus from the search input field when user presses escape.
-            // Note: We use KeyUp instead of KeyPress because some browser plugins can
-            //       intercept KeyPress events with Escape key.
-            //       @see https://stackoverflow.com/a/37461974
             if (event.key === 'Escape') {
                 setLocalSearchString('');
                 dispatch(reduxActions.setSearchString(''));
@@ -76,28 +69,23 @@ export const ToolbarSearch: React.FC<ToolbarSearchProps> = React.memo(() => {
     );
 
     return (
-        <TextField
-            className={classes.searchFieldContainer}
-            size="small"
-            variant="outlined"
-            value={localSearchString}
-            placeholder={searchPlaceholderString}
-            onChange={handleChange as any}
-            inputRef={searchInputRef}
-            InputProps={{
-                onKeyUp: handleKeyUp,
-                startAdornment: (
-                    <InputAdornment className={classes.searchIcon} position="start">
-                        <ChonkyIcon
-                            icon={showLoadingIndicator ? ChonkyIconName.loading : ChonkyIconName.search}
-                            spin={showLoadingIndicator}
-                        />
-                    </InputAdornment>
-                ),
-                className: classes.searchFieldInput,
-            }}
-            inputProps={{ className: classes.searchFieldInputInner }}
-        />
+        <div className={classes.searchFieldContainer}>
+            <span className={classes.searchIcon}>
+                <ChonkyIcon
+                    icon={showLoadingIndicator ? ChonkyIconName.loading : ChonkyIconName.search}
+                    spin={showLoadingIndicator}
+                />
+            </span>
+            <input
+                className={classes.searchFieldInput}
+                type="text"
+                value={localSearchString}
+                placeholder={searchPlaceholderString}
+                onChange={handleChange}
+                onKeyUp={handleKeyUp}
+                ref={searchInputRef}
+            />
+        </div>
     );
 });
 
@@ -105,27 +93,32 @@ const useStyles = makeGlobalChonkyStyles(theme => ({
     searchFieldContainer: {
         height: theme.toolbar.size,
         width: 150,
+        display: 'inline-flex',
+        alignItems: 'center',
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: theme.toolbar.buttonRadius,
+        overflow: 'hidden',
     },
     searchIcon: {
         fontSize: '0.9em',
         opacity: 0.75,
+        paddingLeft: 8,
+        display: 'flex',
+        alignItems: 'center',
     },
     searchFieldInput: {
         lineHeight: important(0),
         padding: important(0),
         margin: important(0),
         fontSize: important(theme.toolbar.fontSize),
-        borderRadius: theme.toolbar.buttonRadius,
+        paddingLeft: 8,
         height: theme.toolbar.size - 4,
-        paddingLeft: important(8),
-        marginTop: 2,
-    },
-    searchFieldInputInner: {
-        lineHeight: important(`${theme.toolbar.size - 4}px`),
-        fontSize: important(theme.toolbar.fontSize),
-        height: important(theme.toolbar.size - 4),
-        padding: important([0, 8, 0, 0]),
-        margin: important(0),
-        '-webkit-appearance': 'none',
+        border: 'none',
+        outline: 'none',
+        backgroundColor: 'transparent',
+        color: 'inherit',
+        fontFamily: 'inherit',
+        width: '100%',
+        boxSizing: 'border-box',
     },
 }));
