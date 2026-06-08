@@ -59,6 +59,17 @@ export {
     browserSelectionFixture,
     browserSourceFixtures,
 } from './fixtures/browser-items';
+export {
+    adaptBrowserFolderChainToFileArray,
+    adaptBrowserItemToFileData,
+    adaptBrowserItemsToFileArray,
+    browserItemThumbnailGenerator,
+    getBrowserItemThumbnailUrl,
+} from './adapters/browser-item-legacy';
+export type {
+    BrowserFolderChainFileData,
+    BrowserItemFileData,
+} from './adapters/browser-item-legacy';
 
 export { I18nConfig, ChonkyFormatters } from './types/i18n.types';
 export { defaultFormatters, getI18nId, getActionI18nId, I18nNamespace } from './util/i18n';
