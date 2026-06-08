@@ -61,6 +61,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = React.memo(props => {
     });
     return (
         <button
+            type="button"
             className={className}
             onClick={onClick}
             title={tooltip ? tooltip : text}

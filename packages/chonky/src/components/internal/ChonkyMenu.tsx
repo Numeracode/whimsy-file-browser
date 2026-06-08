@@ -1,8 +1,10 @@
 /**
  * Lightweight dropdown menu component (replaces MUI Menu).
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+
+import { makeGlobalChonkyStyles } from '../../util/styles';
 
 export interface ChonkyMenuProps {
     open: boolean;
@@ -21,17 +23,50 @@ export const ChonkyMenu: React.FC<ChonkyMenuProps> = ({
 }) => {
     const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
     const menuRef = useRef<HTMLDivElement>(null);
+    const classes = useStyles();
+
+    const getDesiredCoords = useCallback(() => {
+        if (anchorPosition) return anchorPosition;
+        if (anchorEl) {
+            const rect = anchorEl.getBoundingClientRect();
+            return { top: rect.bottom, left: rect.left };
+        }
+        return { top: 0, left: 0 };
+    }, [anchorEl, anchorPosition]);
+
+    const clampCoords = useCallback((desired: { top: number; left: number }) => {
+        if (typeof window === 'undefined') return desired;
+
+        const menu = menuRef.current;
+        const menuWidth = menu?.offsetWidth ?? 120;
+        const menuHeight = menu?.offsetHeight ?? 0;
+        const maxTop = Math.max(0, window.innerHeight - menuHeight);
+        const maxLeft = Math.max(0, window.innerWidth - menuWidth);
+
+        return {
+            top: Math.max(0, Math.min(desired.top, maxTop)),
+            left: Math.max(0, Math.min(desired.left, maxLeft)),
+        };
+    }, []);
+
+    const updatePosition = useCallback(() => {
+        setCoords(clampCoords(getDesiredCoords()));
+    }, [clampCoords, getDesiredCoords]);
+
+    useLayoutEffect(() => {
+        if (!open) return;
+        updatePosition();
+    }, [open, updatePosition]);
 
     useEffect(() => {
-        if (!open) return;
-
-        if (anchorPosition) {
-            setCoords(anchorPosition);
-        } else if (anchorEl) {
-            const rect = anchorEl.getBoundingClientRect();
-            setCoords({ top: rect.bottom, left: rect.left });
-        }
-    }, [open, anchorEl, anchorPosition]);
+        if (!open || typeof window === 'undefined') return;
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [open, updatePosition]);
 
     // Click outside handler
     useEffect(() => {
@@ -66,17 +101,12 @@ export const ChonkyMenu: React.FC<ChonkyMenuProps> = ({
     return createPortal(
         <div
             ref={menuRef}
+            className={classes.menu}
             style={{
                 position: 'fixed',
                 top: coords.top,
                 left: coords.left,
-                zIndex: 1300,
-                backgroundColor: '#fff',
-                borderRadius: 4,
-                boxShadow: '0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12)',
                 minWidth: 120,
-                outline: 0,
-                padding: '4px 0',
             }}
         >
             {children}
@@ -84,3 +114,15 @@ export const ChonkyMenu: React.FC<ChonkyMenuProps> = ({
         document.body
     );
 };
+
+const useStyles = makeGlobalChonkyStyles(theme => ({
+    menu: {
+        zIndex: 'var(--chonky-menu-z, 1300)',
+        backgroundColor: `var(--chonky-menu-bg, ${theme.palette.background.paper})`,
+        color: `var(--chonky-menu-color, ${theme.palette.text.primary})`,
+        borderRadius: 'var(--chonky-menu-radius, 4px)',
+        boxShadow: 'var(--chonky-menu-shadow, 0px 5px 5px -3px rgba(0,0,0,0.2), 0px 8px 10px 1px rgba(0,0,0,0.14), 0px 3px 14px 2px rgba(0,0,0,0.12))',
+        outline: 0,
+        padding: 'var(--chonky-menu-padding, 4px 0)',
+    },
+}));

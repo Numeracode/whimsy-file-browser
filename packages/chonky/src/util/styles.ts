@@ -183,6 +183,7 @@ export const c: (...args: any[]) => string = classnames;
 
 let localStyleCounter = 0;
 let globalStyleCounter = 0;
+const stylesheetRefs = new Map<string, number>();
 
 /** Convert camelCase CSS property to kebab-case, handling vendor prefixes. */
 function camelToKebab(key: string): string {
@@ -217,6 +218,65 @@ function propToCSS(key: string, value: any, dynamic?: any): string {
     return `${cssKey}: ${resolveCSSValue(value)};`;
 }
 
+function isNestedStyle(value: any): value is Record<string, any> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function resolveNestedSelector(selector: string, key: string): string {
+    if (key.startsWith('&')) return key.replace(/&/g, selector);
+    return `${selector} ${key}`;
+}
+
+function safeStringify(value: any): string {
+    try {
+        return JSON.stringify(value) ?? '';
+    } catch {
+        return String(value);
+    }
+}
+
+function hashString(value: string): string {
+    let hash = 5381;
+    for (let i = 0; i < value.length; i++) {
+        hash = (hash * 33) ^ value.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(36);
+}
+
+function styleAtRuleToCSS(
+    atRule: string,
+    selector: string,
+    value: any,
+    dynamic?: any,
+    resolveLocalRef?: (name: string) => string
+): string {
+    if (atRule.startsWith('@global ')) {
+        const globalSelector = atRule.replace('@global ', '').trim();
+        return styleObjToCSS(globalSelector, value, dynamic, resolveLocalRef);
+    }
+    if (!isNestedStyle(value)) return '';
+
+    let inner = '';
+    for (const [nestedKey, nestedValue] of Object.entries(value)) {
+        if (isNestedStyle(nestedValue)) {
+            inner += styleObjToCSS(
+                resolveNestedSelector(selector, nestedKey),
+                nestedValue,
+                dynamic,
+                resolveLocalRef
+            );
+        } else {
+            inner += styleObjToCSS(
+                selector,
+                { [nestedKey]: nestedValue },
+                dynamic,
+                resolveLocalRef
+            );
+        }
+    }
+    return `${atRule} {\n${inner}}\n`;
+}
+
 /**
  * Walk a nested style object (which may include `&` pseudo-selectors,
  * nested selectors, `@keyframes`, `@media`, etc.) and produce a CSS string.
@@ -229,37 +289,35 @@ function styleObjToCSS(
     dynamic?: any,
     resolveLocalRef?: (name: string) => string
 ): string {
-    const lines: string[] = [];
+    const declarations: string[] = [];
+    const nestedRules: string[] = [];
     for (const [key, value] of Object.entries(obj)) {
         if (key.startsWith('@keyframes')) {
             // `@keyframes` is handled at the top level – skip here.
             continue;
         }
         if (key.startsWith('@')) {
-            // At-rule like `@media` or `@global`
-            let inner = '';
-            for (const [nk, nv] of Object.entries(value as any)) {
-                if (typeof nv === 'object' && nv !== null && !Array.isArray(nv)) {
-                    inner += styleObjToCSS(`${selector}${nk}`, nv as any, dynamic, resolveLocalRef);
-                } else {
-                    inner += `  ${propToCSS(nk, nv, dynamic)}\n`;
-                }
-            }
-            const atRuleName = key.startsWith('@global ')
-                ? key.replace('@global ', '')
-                : key;
-            lines.push(`${atRuleName} {\n${selector} {\n${inner}}\n}`);
+            nestedRules.push(styleAtRuleToCSS(key, selector, value, dynamic, resolveLocalRef));
             continue;
         }
         if (key.startsWith('&')) {
             // Pseudo-class / pseudo-element
-            const pseudoSelector = key.replace('&', selector);
-            lines.push(styleObjToCSS(pseudoSelector, value, dynamic, resolveLocalRef));
+            nestedRules.push(styleObjToCSS(
+                resolveNestedSelector(selector, key),
+                value,
+                dynamic,
+                resolveLocalRef
+            ));
             continue;
         }
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        if (isNestedStyle(value)) {
             // Descendant or child selector
-            lines.push(styleObjToCSS(`${selector} ${key}`, value, dynamic, resolveLocalRef));
+            nestedRules.push(styleObjToCSS(
+                resolveNestedSelector(selector, key),
+                value,
+                dynamic,
+                resolveLocalRef
+            ));
             continue;
         }
 
@@ -268,12 +326,18 @@ function styleObjToCSS(
         if (resolveLocalRef && typeof value === 'string' && value.startsWith('$')) {
             resolvedValue = resolveLocalRef(value.slice(1));
         }
-        lines.push(`  ${propToCSS(key, resolvedValue, dynamic)}\n`);
+        declarations.push(`  ${propToCSS(key, resolvedValue, dynamic)}`);
     }
-    return lines.join('');
+    const block = declarations.length
+        ? `${selector} {\n${declarations.join('\n')}\n}\n`
+        : '';
+    return block + nestedRules.join('');
 }
 
 function injectStylesheet(id: string, css: string) {
+    if (typeof document === 'undefined') return;
+    stylesheetRefs.set(id, (stylesheetRefs.get(id) ?? 0) + 1);
+
     let el = document.getElementById(id) as HTMLStyleElement | null;
     if (!el) {
         el = document.createElement('style');
@@ -281,10 +345,19 @@ function injectStylesheet(id: string, css: string) {
         el.setAttribute('data-chonky', '');
         document.head.appendChild(el);
     }
-    el.textContent = css;
+    if (el.textContent !== css) {
+        el.textContent = css;
+    }
 }
 
 function removeStylesheet(id: string) {
+    if (typeof document === 'undefined') return;
+    const nextRefCount = (stylesheetRefs.get(id) ?? 0) - 1;
+    if (nextRefCount > 0) {
+        stylesheetRefs.set(id, nextRefCount);
+        return;
+    }
+    stylesheetRefs.delete(id);
     const el = document.getElementById(id);
     if (el) el.remove();
 }
@@ -298,13 +371,12 @@ export const makeLocalChonkyStyles = (
     styles: (theme: ChonkyTheme) => any
 ): ((dynamic?: any) => Record<string, string>) => {
     const componentId = localStyleCounter++;
-    const prefix = `cls-${componentId}`;
 
     return (dynamic?: any): Record<string, string> => {
         const theme = useChonkyTheme();
-        const keyframesRef = useRef<Record<string, string>>({});
-
         const styleObj = styles(theme);
+        const styleSignature = hashString(safeStringify({ styleObj, dynamic, theme }));
+        const prefix = `cls-${componentId}-${styleSignature}`;
 
         // Collect `@keyframes` first and generate unique names
         const keyframeMapping: Record<string, string> = {};
@@ -341,7 +413,7 @@ export const makeLocalChonkyStyles = (
         }
 
         const css = cssParts.join('\n');
-        const styleId = `ch-styles-${componentId}`;
+        const styleId = `ch-styles-${componentId}-${styleSignature}`;
 
         // Track previous dynamic state to decide if we need to re-inject
         // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -352,7 +424,7 @@ export const makeLocalChonkyStyles = (
             return () => removeStylesheet(styleId);
             // Re-inject when CSS changes (dynamic state or theme)
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [css]);
+        }, [css, styleId]);
 
         return classes;
     };
@@ -366,10 +438,8 @@ export const makeGlobalChonkyStyles = (
     makeStyles: (theme: ChonkyTheme) => any
 ): ((...args: any[]) => Record<string, string>) => {
     const componentId = globalStyleCounter++;
-    const prefix = `ch-global-${componentId}`;
 
     // Build selector mapping once (static)
-    let selectorMapping: Record<string, string> = {};
     // We need a closure around the factory to inspect keys
     const styleFactory = makeStyles;
 
@@ -380,20 +450,18 @@ export const makeGlobalChonkyStyles = (
         const localStyles = styleFactory(theme);
         const cssParts: string[] = [];
         const classes: Record<string, string> = {};
-        const localMapping: Record<string, string> = {};
 
         for (const localSelector of Object.keys(localStyles)) {
             const globalSelector = `chonky-${localSelector}`;
-            localMapping[localSelector] = globalSelector;
             classes[localSelector] = globalSelector;
             const selDef = localStyles[localSelector];
             // Generate: `.chonky-XXX { ... }` directly
             cssParts.push(styleObjToCSS(`.${globalSelector}`, selDef, dynamic));
         }
-        selectorMapping = localMapping;
 
         const css = cssParts.join('\n');
-        const styleId = `ch-global-styles-${componentId}`;
+        const styleSignature = hashString(safeStringify({ localStyles, dynamic, theme }));
+        const styleId = `ch-global-styles-${componentId}-${styleSignature}`;
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         useEffect(() => {
@@ -402,8 +470,8 @@ export const makeGlobalChonkyStyles = (
             }
             return () => removeStylesheet(styleId);
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [css]);
+        }, [css, styleId]);
 
-        return { ...classes, ...selectorMapping };
+        return classes;
     };
 };

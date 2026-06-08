@@ -6,6 +6,7 @@
 
 import React, { ReactElement, useMemo } from 'react';
 
+import { ChonkyActions } from '../../action-definitions';
 import { important, makeGlobalChonkyStyles, useChonkyTheme } from '../../util/styles';
 import { useFolderChainItems } from './FileNavbar-hooks';
 import { FolderChainButton } from './FolderChainButton';
@@ -38,7 +39,7 @@ export const FileNavbar: React.FC<FileNavbarProps> = React.memo(() => {
     return (
         <div className={classes.navbarWrapper}>
             <div className={classes.navbarContainer}>
-                <SmartToolbarButton fileActionId={'open-parent-folder'} />
+                <SmartToolbarButton fileActionId={ChonkyActions.OpenParentFolder.id} />
                 <nav className={classes.navbarBreadcrumbs}
                      style={{ fontSize: theme.toolbar.fontSize }}>
                     {folderChainComponents.map((comp, i) => (

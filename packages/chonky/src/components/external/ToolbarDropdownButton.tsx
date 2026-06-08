@@ -29,6 +29,13 @@ export const ToolbarDropdownButton = React.forwardRef(
         const { text, active, icon, onClick, disabled } = props;
         const classes = useStyles();
         const ChonkyIcon = useContext(ChonkyIconContext);
+        const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (disabled || !onClick) return;
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onClick();
+            }
+        }, [disabled, onClick]);
 
         const className = c({
             [classes.baseButton]: true,
@@ -39,8 +46,10 @@ export const ToolbarDropdownButton = React.forwardRef(
                 ref={ref}
                 className={className}
                 onClick={disabled ? undefined : onClick}
+                onKeyDown={handleKeyDown}
                 role="menuitem"
-                tabIndex={-1}
+                tabIndex={disabled ? -1 : 0}
+                aria-disabled={disabled ? true : undefined}
                 style={{
                     opacity: disabled ? 0.5 : 1,
                     cursor: disabled ? 'default' : 'pointer',
