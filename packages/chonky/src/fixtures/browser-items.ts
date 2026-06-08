@@ -274,6 +274,26 @@ export const browserItemFixtures: readonly BrowserItem[] = [
             preview: availableAsset('preview', 'notes.txt', 'text/plain'),
         }),
     }),
+    catalogFile({
+        id: 'code:component',
+        name: 'PreviewShell.tsx',
+        mimeType: 'text/tsx',
+        extension: '.tsx',
+        sizeBytes: 8_420,
+        preview: previewDescriptor('code', {
+            preview: availableAsset('preview', 'PreviewShell.tsx', 'text/tsx'),
+        }),
+    }),
+    catalogFile({
+        id: 'audio:jingle',
+        name: 'launch-jingle.mp3',
+        mimeType: 'audio/mpeg',
+        extension: '.mp3',
+        sizeBytes: 4_120_100,
+        preview: previewDescriptor('audio', {
+            preview: availableAsset('preview', 'launch-jingle.mp3', 'audio/mpeg'),
+        }),
+    }),
     remoteFile(browserSourceFixtures.googleDrive, 'provider-native-video-id', {
         id: 'remote:gdrive:video',
         name: 'launch-cut.mp4',

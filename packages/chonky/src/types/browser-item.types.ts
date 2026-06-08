@@ -46,6 +46,16 @@ export type BrowserPreviewRenderer =
 
 export type BrowserPreviewAssetKind = 'thumbnail' | 'preview' | 'download';
 
+export type BrowserPreviewTrackKind = 'subtitles' | 'captions' | 'descriptions' | 'chapters' | 'metadata';
+
+export interface BrowserPreviewTrack {
+    kind: BrowserPreviewTrackKind;
+    src: string;
+    srcLang: string;
+    label: string;
+    default?: boolean;
+}
+
 export type BrowserPreviewUnavailableReason =
     | 'none'
     | 'unsupported'
@@ -62,6 +72,7 @@ export type BrowserPreviewAsset<K extends BrowserPreviewAssetKind = BrowserPrevi
           url: string;
           expiresAt?: string;
           contentType?: string;
+          tracks?: readonly BrowserPreviewTrack[];
       }
     | {
           status: 'pending';

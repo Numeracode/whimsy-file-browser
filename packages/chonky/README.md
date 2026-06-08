@@ -45,6 +45,31 @@ export function MyBrowser() {
 }
 ```
 
+## Provider-agnostic previews
+
+Use `PreviewShell`, `FilePreviewer`, `PreviewTile`, and `MediaLightbox` for new
+preview integrations. The package renders manifests and signed URLs supplied by
+the host app; it does not include Whimsy auth, provider credentials, or signing
+logic.
+
+```tsx
+import { MediaLightbox, PreviewTile } from '@numeracode/whimsy-file-browser';
+
+export function PreviewExample({ item, open, setOpen }) {
+    return (
+        <>
+            <PreviewTile item={item} onPreview={() => setOpen(true)} />
+            <MediaLightbox
+                item={item}
+                loadPreview={({ item }) => api.getPreviewManifest(item.id)}
+                onOpenChange={setOpen}
+                open={open}
+            />
+        </>
+    );
+}
+```
+
 ## Development
 
 ```bash

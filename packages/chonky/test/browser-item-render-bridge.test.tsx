@@ -110,7 +110,7 @@ describe('BrowserItem render bridge spike', () => {
             />
         );
 
-        expect(screen.getByText('13 items')).toBeTruthy();
+        expect(screen.getByText(`${browserItemFixtures.length} items`)).toBeTruthy();
         expect(screen.getByText('Campaign')).toBeTruthy();
         expect(screen.getByText('Brand assets')).toBeTruthy();
     });
