@@ -1,41 +1,34 @@
-# Contributing to Chonky
+# Contributing
 
-https://discord.gg/4HJaFn9
+This is Numeracode's maintenance fork of Chonky for the Whimsy file-browser
+extraction lane. Use GitHub issues and PRs in
+`Numeracode/whimsy-file-browser`; do not send Whimsy-specific work upstream.
 
-## Setting up the development environment
+## Setup
 
-1. Clone the repository and bootstrap lerna. This will wire up all Chonky packages 
-   to each other:
-    ```bash
-    git clone git@github.com:TimboKZ/Chonky.git
-    cd Chonky
-    git checkout 2.x-dev
+```bash
+npm ci
+npm run typecheck
+npm test
+npm run build
+```
 
-    yarn install
-    lerna bootstrap
-    ```
+Package dry-run checks:
 
-2. In main `chonky/` package, start the TSDX watcher which will transpile TS in real time:
-   ```bash
-   cd packages/chonky/
-   yarn start
-   # Keep the script running
-   ```
+```bash
+npm pack --workspace packages/chonky --dry-run
+npm pack --workspace packages/chonky-icon-fontawesome --dry-run
+```
 
-3. Build the `chonky-icon-fontawesome/` package:
-   ```bash
-   cd packages/chonky-icon-fontawesome/
-   yarn build
-   ```
+## Branching
 
-4. In a separate shell, start the Storybook server to test the changes. It will
-   hot-reload when you change Chonky source code.
-   ```bash
-   cd packages/website/
-   yarn storybook
-   # Keep the script running
-   ```
+The default branch is `2.x`. Open PRs against `2.x`.
 
-## Making a PR
+## Package Names
 
-All PRs should be created against `2.x-dev` branch.
+Published package identity is owned by Numeracode:
+
+- `@numeracode/whimsy-file-browser`
+- `@numeracode/whimsy-file-browser-icons`
+
+Keep upstream MIT attribution intact in license files and source headers.

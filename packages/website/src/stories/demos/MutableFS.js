@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 
-import { fileMap, defineFileAction, ChonkyIconName, FullFileBrowser, setChonkyDefaults, ChonkyActions, CustomVisibilityState } from 'chonky';
-import { ChonkyIconFA } from 'chonky-icon-fontawesome';
+import { fileMap, defineFileAction, ChonkyIconName, FullFileBrowser, setChonkyDefaults, ChonkyActions, CustomVisibilityState } from '@numeracode/whimsy-file-browser';
+import { ChonkyIconFA } from '@numeracode/whimsy-file-browser-icons';
 import styled from 'styled-components';
 
 import FormControl from '@material-ui/core/FormControl';

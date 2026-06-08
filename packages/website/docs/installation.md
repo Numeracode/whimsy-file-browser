@@ -8,14 +8,14 @@ sidebar_position: 2
 
 ## Installation
 
-You need to install `chonky` and its default icon component, `chonky-icon-fontawesome`:
+You need to install the browser package and its default icon component:
 
 ```bash
 # Using yarn:
-yarn add chonky@latest chonky-icon-fontawesome@latest
+yarn add @numeracode/whimsy-file-browser@latest @numeracode/whimsy-file-browser-icons@latest
 
 # Or using npm:
-npm install chonky@latest chonky-icon-fontawesome@latest
+npm install @numeracode/whimsy-file-browser@latest @numeracode/whimsy-file-browser-icons@latest
 ```
 
 The icon component is packaged separately to decrease the bundle size. You can always
@@ -31,8 +31,8 @@ As the first step, you should tell Chonky which icon component it should use. Th
 done using the `setChonkyDefaults` helper method:
 
 ```ts
-import { setChonkyDefaults } from 'chonky';
-import { ChonkyIconFA } from 'chonky-icon-fontawesome';
+import { setChonkyDefaults } from '@numeracode/whimsy-file-browser';
+import { ChonkyIconFA } from '@numeracode/whimsy-file-browser-icons';
 
 // Somewhere in your `index.ts`:
 setChonkyDefaults({ iconComponent: ChonkyIconFA });
@@ -41,7 +41,7 @@ setChonkyDefaults({ iconComponent: ChonkyIconFA });
 Then you can use Chonky anywhere in your application:
 
 ```tsx
-import { FullFileBrowser } from 'chonky';
+import { FullFileBrowser } from '@numeracode/whimsy-file-browser';
 
 export const MyFileBrowser = () => {
     const files = [
@@ -49,7 +49,7 @@ export const MyFileBrowser = () => {
         {
             id: 'mcd',
             name: 'chonky-sphere-v2.png',
-            thumbnailUrl: 'https://chonky.io/chonky-sphere-v2.png',
+            thumbnailUrl: '/img/chonky-sphere-v2.png',
         },
     ];
     const folderChain = [{ id: 'xcv', name: 'Demo', isDir: true }];
@@ -95,19 +95,19 @@ standard ES6 imports:
 
 ```ts
 // FileArray is a TS type
-import { FileArray } from 'chonky';
+import { FileArray } from '@numeracode/whimsy-file-browser';
 
 const myFiles: FileArray = [{ id: 'abD3', name: 'README.txt' }, null];
 ```
 
-You can see the list of exported types in Chonky's [entrypoint `index.ts` on
-GitHub](https://github.com/TimboKZ/Chonky/blob/2.x/packages/chonky/src/index.ts)
+You can see the list of exported types in the browser package [entrypoint `index.ts` on
+GitHub](https://github.com/Numeracode/whimsy-file-browser/blob/2.x/packages/chonky/src/index.ts)
 (files named `*.types` contain the types). If you need access to types that are not
-exported, either [create an issue](https://github.com/TimboKZ/Chonky/issues) or import
+exported, either [create an issue](https://github.com/Numeracode/whimsy-file-browser/issues) or import
 them using the full file path:
 
 ```ts
-import { MouseFileClickPayload } from 'chonky/lib/types/action-payloads.types';
+import { MouseFileClickPayload } from '@numeracode/whimsy-file-browser/lib/types/action-payloads.types';
 
 const myPayload: MouseFileClickPayload = {
     /* ... */

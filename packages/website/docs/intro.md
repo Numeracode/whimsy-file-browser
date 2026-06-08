@@ -6,16 +6,17 @@ sidebar_position: 1
 
 ### Description
 
-Chonky is a file browser component for React. It tries to recreate the native
-file browsing experience in your browser. This means your users can make
+Whimsy File Browser is a Numeracode-maintained fork of Chonky, a file browser
+component for React. It tries to recreate the native file browsing experience in
+your browser. This means your users can make
 selections, drag & drop files, toggle between List and Grid file views, use
 keyboard shortcuts, and much more!
 
 ### Available resources
 
-1.  [Landing page](/) - a quick overview and a simple demo of Chonky.
+1.  [Landing page](/) - a quick overview and a simple demo.
 2.  [Documentation](/docs/intro) **(you are here)** - detailed documentation with some code snippets and live examples.
-3.  [Storybook](https://chonky.io/storybook/2.x/) - showcase of full-fledged file browsers built using Chonky.
+3.  [Repository](https://github.com/Numeracode/whimsy-file-browser) - source code, issues, and release tracking.
 
 ### Live examples
 
@@ -67,7 +68,6 @@ Please read this section to understand what Chonky is and is not.
     Unfortunately this power comes from understanding how Chonky works internally, so
     you might still find it necessary to familiarise yourself with Chonky's source code.
     If you're not sure how something can be done, please [create an
-    issue](https://github.com/TimboKZ/Chonky/issues) describing your use case. I'll be
-    happy to show you some code examples.
+    issue](https://github.com/Numeracode/whimsy-file-browser/issues) describing your use case.
 
 ---

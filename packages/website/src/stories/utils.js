@@ -1,5 +1,5 @@
 import Button from '@material-ui/core/Button';
-import { ChonkyActions, ChonkyFileActionData } from 'chonky';
+import { ChonkyActions, ChonkyFileActionData } from '@numeracode/whimsy-file-browser';
 import Noty from 'noty';
 import 'noty/lib/noty.css';
 import 'noty/lib/themes/relax.css';
@@ -57,7 +57,7 @@ export const showActionNotification = (data) => {
     }).show();
 };
 
-const GIT_BRANCH = 'master';
+const GIT_BRANCH = '2.x';
 export const useStoryLinks = (links) => {
     return useMemo(
         () => {
@@ -102,4 +102,4 @@ export const useStoryLinks = (links) => {
     );
 };
 export const getGitHubLink = (filePath) =>
-    `https://github.com/TimboKZ/chonky-website/blob/${GIT_BRANCH}/${filePath}`;
+    `https://github.com/Numeracode/whimsy-file-browser/blob/${GIT_BRANCH}/packages/website/${filePath}`;
