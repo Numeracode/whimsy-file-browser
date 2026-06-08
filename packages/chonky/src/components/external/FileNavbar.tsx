@@ -7,7 +7,7 @@
 import React, { ReactElement, useMemo } from 'react';
 
 import { ChonkyActions } from '../../action-definitions';
-import { important, makeGlobalChonkyStyles, useChonkyTheme } from '../../util/styles';
+import { important, makeGlobalChonkyStyles } from '../../util/styles';
 import { useFolderChainItems } from './FileNavbar-hooks';
 import { FolderChainButton } from './FolderChainButton';
 import { SmartToolbarButton } from './ToolbarButton';
@@ -16,7 +16,6 @@ export interface FileNavbarProps {}
 
 export const FileNavbar: React.FC<FileNavbarProps> = React.memo(() => {
     const classes = useStyles();
-    const theme = useChonkyTheme();
     const folderChainItems = useFolderChainItems();
 
     const folderChainComponents = useMemo(() => {
@@ -40,8 +39,7 @@ export const FileNavbar: React.FC<FileNavbarProps> = React.memo(() => {
         <div className={classes.navbarWrapper}>
             <div className={classes.navbarContainer}>
                 <SmartToolbarButton fileActionId={ChonkyActions.OpenParentFolder.id} />
-                <nav className={classes.navbarBreadcrumbs}
-                     style={{ fontSize: theme.toolbar.fontSize }}>
+                <nav className={classes.navbarBreadcrumbs}>
                     {folderChainComponents.map((comp, i) => (
                         <React.Fragment key={i}>
                             {i > 0 && (
@@ -67,6 +65,7 @@ const useStyles = makeGlobalChonkyStyles(theme => ({
         display: 'flex',
     },
     navbarBreadcrumbs: {
+        fontSize: theme.toolbar.fontSize,
         display: 'flex',
         flexWrap: 'wrap',
         alignItems: 'center',

@@ -37,10 +37,19 @@ export const ChonkyPresentationLayer: React.FC<ChonkyPresentationLayerProps> = (
     const handleClickAway = useCallback(
         (event: MouseEvent) => {
             const target = event.target as Node | null;
+            const path = typeof event.composedPath === 'function'
+                ? event.composedPath()
+                : [];
+            const clickedInsideMenu = path.some(node =>
+                typeof Element !== 'undefined' &&
+                node instanceof Element &&
+                node.hasAttribute('data-chonky-menu-root')
+            );
             if (
                 !clearSelectionOnOutsideClick ||
                 !rootRef.current ||
                 (target && rootRef.current.contains(target)) ||
+                clickedInsideMenu ||
                 elementIsInsideButton(event.target)
             ) {
                 return;

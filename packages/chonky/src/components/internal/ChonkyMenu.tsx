@@ -38,7 +38,7 @@ export const ChonkyMenu: React.FC<ChonkyMenuProps> = ({
         if (typeof window === 'undefined') return desired;
 
         const menu = menuRef.current;
-        const menuWidth = menu?.offsetWidth ?? 120;
+        const menuWidth = menu?.offsetWidth ?? 160;
         const menuHeight = menu?.offsetHeight ?? 0;
         const maxTop = Math.max(0, window.innerHeight - menuHeight);
         const maxLeft = Math.max(0, window.innerWidth - menuWidth);
@@ -72,7 +72,11 @@ export const ChonkyMenu: React.FC<ChonkyMenuProps> = ({
     useEffect(() => {
         if (!open) return;
         const handleClick = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+            if (
+                menuRef.current &&
+                e.target instanceof Node &&
+                !menuRef.current.contains(e.target)
+            ) {
                 onClose();
             }
         };
@@ -101,12 +105,13 @@ export const ChonkyMenu: React.FC<ChonkyMenuProps> = ({
     return createPortal(
         <div
             ref={menuRef}
+            data-chonky-menu-root=""
             className={classes.menu}
             style={{
                 position: 'fixed',
                 top: coords.top,
                 left: coords.left,
-                minWidth: 120,
+                minWidth: 'var(--chonky-menu-min-width, 160px)',
             }}
         >
             {children}

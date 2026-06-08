@@ -148,10 +148,13 @@ export const useChonkyTheme = () => useContext(ChonkyThemeContext);
 // ──────────────────────────────────────────────
 
 export const useIsMobileBreakpoint = () => {
-    const [isMobile, setIsMobile] = React.useState(false);
+    const [isMobile, setIsMobile] = React.useState(() => {
+        if (typeof globalThis.matchMedia !== 'function') return false;
+        return globalThis.matchMedia('(max-width:480px)').matches;
+    });
     useEffect(() => {
-        if (typeof window.matchMedia !== 'function') return;
-        const mql = window.matchMedia('(max-width:480px)');
+        if (typeof globalThis.matchMedia !== 'function') return;
+        const mql = globalThis.matchMedia('(max-width:480px)');
         setIsMobile(mql.matches);
         const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
         mql.addEventListener('change', handler);
