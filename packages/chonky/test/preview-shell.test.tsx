@@ -7,6 +7,7 @@ import {
     PreviewShell,
     PreviewTile,
     browserItemFixtures,
+    createBrowserOpaqueId,
 } from '../src';
 import type { BrowserItem, PreviewDescriptor, PreviewRendererRegistry } from '../src';
 
@@ -17,6 +18,25 @@ const itemById = (id: string): BrowserItem => {
 };
 
 describe('PreviewShell', () => {
+    const imageDescriptor: PreviewDescriptor = {
+        renderer: 'image',
+        preview: {
+            status: 'available',
+            kind: 'preview',
+            url: 'https://signed.example.test/recovered.jpg',
+            contentType: 'image/jpeg',
+        },
+    };
+    const pdfDescriptor: PreviewDescriptor = {
+        renderer: 'pdf',
+        preview: {
+            status: 'available',
+            kind: 'preview',
+            url: 'https://signed.example.test/private-file.pdf',
+            contentType: 'application/pdf',
+        },
+    };
+
     it('renders native image, video, audio, pdf, text, and code preview assets', () => {
         const cases = [
             ['image:hero', 'preview-image'],
@@ -62,15 +82,7 @@ describe('PreviewShell', () => {
     });
 
     it('loads a host-provided preview manifest without knowing auth, tokens, or provider IDs', async () => {
-        const loader = vi.fn(async (): Promise<PreviewDescriptor> => ({
-            renderer: 'pdf',
-            preview: {
-                status: 'available',
-                kind: 'preview',
-                url: 'https://signed.example.test/private-file.pdf',
-                contentType: 'application/pdf',
-            },
-        }));
+        const loader = vi.fn(async (): Promise<PreviewDescriptor> => pdfDescriptor);
         const item = { ...itemById('preview:none'), preview: undefined };
 
         render(<PreviewShell item={item} loadPreview={loader} />);
@@ -78,6 +90,55 @@ describe('PreviewShell', () => {
         expect(screen.getByText('Loading preview...')).toBeTruthy();
         expect(await screen.findByTestId('preview-pdf')).toBeTruthy();
         expect(loader).toHaveBeenCalledWith({ item, reason: 'initial' });
+    });
+
+    it('does not let stale host manifest responses overwrite the current item', async () => {
+        let resolveFirst: ((descriptor: PreviewDescriptor) => void) | undefined;
+        let resolveSecond: ((descriptor: PreviewDescriptor) => void) | undefined;
+        const firstItem = {
+            ...itemById('preview:none'),
+            id: createBrowserOpaqueId('preview:load:first'),
+            name: 'first.bin',
+            preview: undefined,
+        };
+        const secondItem = {
+            ...itemById('preview:none'),
+            id: createBrowserOpaqueId('preview:load:second'),
+            name: 'second.bin',
+            preview: undefined,
+        };
+        const loader = vi.fn(({ item }): Promise<PreviewDescriptor> =>
+            new Promise((resolve) => {
+                if (item.id === firstItem.id) resolveFirst = resolve;
+                else resolveSecond = resolve;
+            })
+        );
+
+        const { rerender } = render(<PreviewShell item={firstItem} loadPreview={loader} />);
+        rerender(<PreviewShell item={secondItem} loadPreview={loader} />);
+
+        await waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
+        resolveSecond?.(pdfDescriptor);
+        expect(await screen.findByTestId('preview-pdf')).toBeTruthy();
+
+        resolveFirst?.(imageDescriptor);
+        await waitFor(() => expect(screen.queryByTestId('preview-image')).toBeNull());
+        expect(screen.getByTestId('preview-pdf')).toBeTruthy();
+    });
+
+    it('allows retry after a loader-level manifest failure before any asset exists', async () => {
+        const loader = vi.fn()
+            .mockRejectedValueOnce(new Error('Manifest service unavailable'))
+            .mockResolvedValueOnce(imageDescriptor);
+        const item = { ...itemById('preview:none'), preview: undefined };
+
+        render(<PreviewShell item={item} loadPreview={loader} />);
+
+        expect(await screen.findByText('Manifest service unavailable')).toBeTruthy();
+        fireEvent.click(screen.getByText('Retry preview'));
+
+        expect(await screen.findByTestId('preview-image')).toBeTruthy();
+        expect(loader).toHaveBeenLastCalledWith({ item, reason: 'retry' });
     });
 
     it('renders signing and expiry failures with retry through the host manifest loader', async () => {
@@ -117,13 +178,32 @@ describe('PreviewShell', () => {
         expect(screen.getByLabelText('Preview proposal.docx').getAttribute('data-preview-status')).toBe('pending');
     });
 
-    it('wraps previews in a reusable media lightbox', () => {
+    it('does not preview disabled items from preview tiles', () => {
+        const onPreview = vi.fn();
+        const disabledItem = {
+            ...itemById('image:hero'),
+            flags: { disabled: true },
+        };
+
+        render(<PreviewTile item={disabledItem} onPreview={onPreview} />);
+
+        const tile = screen.getByLabelText('Preview hero-photo.jpg');
+        expect((tile as HTMLButtonElement).disabled).toBe(true);
+        fireEvent.click(tile);
+        expect(onPreview).not.toHaveBeenCalled();
+    });
+
+    it('wraps previews in a reusable keyboard-operable media lightbox', () => {
         const onOpenChange = vi.fn();
         render(<MediaLightbox item={itemById('image:hero')} onOpenChange={onOpenChange} open />);
 
-        expect(screen.getByRole('dialog')).toBeTruthy();
+        const dialog = screen.getByRole('dialog');
+        const closeButton = screen.getByLabelText('Close preview');
+        expect(dialog).toBeTruthy();
         expect(screen.getByTestId('preview-image')).toBeTruthy();
-        fireEvent.click(screen.getByLabelText('Close preview'));
+        expect(document.activeElement).toBe(closeButton);
+        expect((closeButton as HTMLElement).style.height).toBe('44px');
+        fireEvent.keyDown(dialog, { key: 'Escape' });
         expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 });

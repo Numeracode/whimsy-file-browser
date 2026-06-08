@@ -4,7 +4,11 @@ import type { PreviewTileProps } from '../../types/preview-shell.types';
 
 export const PreviewTile: React.FC<PreviewTileProps> = ({ className, item, onPreview, style }) => {
     const thumbnail = item.preview?.thumbnail;
-    const canPreview = item.kind === 'file' && item.capabilities?.preview !== false && item.preview?.renderer !== 'none';
+    const canPreview =
+        item.kind === 'file'
+        && item.flags?.disabled !== true
+        && item.capabilities?.preview !== false
+        && item.preview?.renderer !== 'none';
     const label = item.preview?.renderer ?? item.extension?.replace('.', '').toUpperCase() ?? item.kind;
 
     return (

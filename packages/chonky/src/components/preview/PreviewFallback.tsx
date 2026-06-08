@@ -26,7 +26,9 @@ const getFallbackMessage = (props: PreviewFallbackProps): string => {
 
 export const PreviewFallback: React.FC<PreviewFallbackProps> = (props) => {
     const { asset, className, item, loading, onDownload, onRetry, style } = props;
-    const canRetry = Boolean(onRetry && (asset?.status === 'pending' || asset?.status === 'unavailable') && asset.canRetry);
+    const canRetry = Boolean(
+        onRetry && (props.error || ((asset?.status === 'pending' || asset?.status === 'unavailable') && asset.canRetry))
+    );
     const message = getFallbackMessage(props);
 
     return (

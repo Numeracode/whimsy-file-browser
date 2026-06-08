@@ -1,19 +1,59 @@
-import React from 'react';
+import React, { KeyboardEvent, useEffect, useRef } from 'react';
 
 import type { MediaLightboxProps } from '../../types/preview-shell.types';
 import { PreviewShell } from './PreviewShell';
 
 export const MediaLightbox: React.FC<MediaLightboxProps> = ({ onOpenChange, open, title, ...previewProps }) => {
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+    useEffect(() => {
+        if (open) closeButtonRef.current?.focus();
+    }, [open]);
+
     if (!open) return null;
 
+    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            onOpenChange(false);
+            return;
+        }
+
+        if (event.key !== 'Tab') return;
+        const focusable = Array.from(
+            dialogRef.current?.querySelectorAll<HTMLElement>(
+                'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+            ) ?? []
+        ).filter((element) => !element.hasAttribute('disabled'));
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    };
+
     return (
-        <div aria-modal="true" data-testid="media-lightbox" role="dialog" style={styles.backdrop}>
-            <div style={styles.dialog}>
+        <div
+            aria-modal="true"
+            data-testid="media-lightbox"
+            onKeyDown={handleKeyDown}
+            role="dialog"
+            style={styles.backdrop}
+        >
+            <div ref={dialogRef} style={styles.dialog}>
                 <div style={styles.header}>
                     <div style={styles.title}>{title ?? previewProps.item.name}</div>
                     <button
                         aria-label="Close preview"
                         onClick={() => onOpenChange(false)}
+                        ref={closeButtonRef}
                         style={styles.closeButton}
                         type="button"
                     >
@@ -73,9 +113,9 @@ const styles: Record<string, React.CSSProperties> = {
         color: '#0f172a',
         cursor: 'pointer',
         fontSize: 22,
-        height: 34,
-        lineHeight: '30px',
-        width: 34,
+        height: 44,
+        lineHeight: '40px',
+        width: 44,
     },
     preview: {
         borderRadius: 0,
