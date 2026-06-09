@@ -72,6 +72,28 @@ Prefer the `/preview` subpath for preview-only integrations. It avoids loading
 the legacy browser/redux runtime when a host app only needs tile, shell,
 renderer, or lightbox primitives.
 
+## Preview Gateway
+
+Server-side preview conversion helpers live behind the `/server` subpath. They
+wrap a self-hosted Gotenberg/LibreOffice service and convert already-authorized
+Office bytes into normalized PDF bytes.
+
+```ts
+import { convertOfficeDocumentToPdf } from '@numeracode/whimsy-file-browser/server';
+
+const pdf = await convertOfficeDocumentToPdf({
+    baseUrl: process.env.GOTENBERG_URL,
+    fileName: 'brief.docx',
+    source: authorizedFileBytes,
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+});
+```
+
+The gateway still never reads Whimsy tokens or provider IDs. Whimsy remains the
+credential boundary: it resolves user access, fetches the source bytes from
+Google Drive, SFTP, S3, or local storage, and passes those bytes into this
+package. The package only owns format conversion and preview UI primitives.
+
 ## Development
 
 ```bash

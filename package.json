@@ -19,6 +19,11 @@
       "types": "./packages/chonky/dist/preview.d.ts",
       "import": "./packages/chonky/dist/preview.mjs",
       "require": "./packages/chonky/dist/preview.js"
+    },
+    "./server": {
+      "types": "./packages/chonky/dist/server.d.ts",
+      "import": "./packages/chonky/dist/server.mjs",
+      "require": "./packages/chonky/dist/server.js"
     }
   },
   "workspaces": [
