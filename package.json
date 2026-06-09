@@ -38,9 +38,6 @@
     "test": "npm run build --workspace packages/chonky && npm run test --workspace packages/chonky && npm run test --workspace packages/chonky-icon-fontawesome",
     "typecheck": "npm run typecheck --workspace packages/chonky && npm run build --workspace packages/chonky && npm run typecheck --workspace packages/chonky-icon-fontawesome"
   },
-  "dependencies": {
-    "@dnd-kit/core": "^6.3.1"
-  },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^29.1.1",
