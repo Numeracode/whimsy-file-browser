@@ -115,6 +115,10 @@ const sortItems = (items: readonly BrowserItem[], sort: BrowserSortState): reado
     return sorted;
 };
 
+// Reused across every item render so we don't allocate an Intl.NumberFormat per
+// tile (large grids would otherwise pay that cost on each render).
+const itemCountFormatter = new Intl.NumberFormat();
+
 const formatSize = (sizeBytes?: number): string => {
     if (typeof sizeBytes !== 'number') return '';
     if (sizeBytes < 1024) return `${sizeBytes} B`;
@@ -922,9 +926,12 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
                 )}
             </div>
             <div style={styles.itemBody}>
-                <span style={styles.itemName}>{item.name}</span>
+                {/* title exposes the full name when the label is truncated. */}
+                <span style={styles.itemName} title={item.name}>{item.name}</span>
                 <span style={styles.itemMeta}>
-                    {item.kind === 'folder' ? `${item.childCount ?? 0} items` : formatSize(item.sizeBytes)}
+                    {item.kind === 'folder'
+                        ? `${itemCountFormatter.format(item.childCount ?? 0)} ${item.childCount === 1 ? 'item' : 'items'}`
+                        : formatSize(item.sizeBytes)}
                     {item.source?.label ? ` · ${item.source.label}` : ''}
                 </span>
             </div>
