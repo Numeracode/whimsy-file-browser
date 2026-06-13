@@ -925,10 +925,10 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
                     <DefaultThumbnail item={item} thumbnailUrl={thumbnailUrl} />
                 )}
             </div>
-            <div style={styles.itemBody}>
+            <div style={viewMode === 'grid' ? styles.gridItemBody : styles.itemBody}>
                 {/* title exposes the full name when the label is truncated. */}
                 <span style={viewMode === 'grid' ? styles.gridItemName : styles.itemName} title={item.name}>{item.name}</span>
-                <span style={styles.itemMeta}>
+                <span style={viewMode === 'grid' ? styles.gridItemMeta : styles.itemMeta}>
                     {item.kind === 'folder'
                         ? `${itemCountFormatter.format(item.childCount ?? 0)} ${item.childCount === 1 ? 'item' : 'items'}`
                         : formatSize(item.sizeBytes)}
@@ -1092,12 +1092,31 @@ const styles: Record<string, CSSProperties> = {
         minWidth: 0,
         padding: '16px',
     },
+    gridItemBody: {
+        alignItems: 'center',
+        display: 'flex',
+        flex: 1,
+        flexDirection: 'column',
+        gap: 4,
+        minWidth: 0,
+        padding: '12px 16px 14px',
+        textAlign: 'center',
+    },
     itemMeta: {
         color: '#64748b',
         fontSize: 12,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
+    },
+    gridItemMeta: {
+        color: '#94a3b8',
+        fontSize: 11,
+        overflow: 'hidden',
+        textAlign: 'center',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        width: '100%',
     },
     itemName: {
         color: '#0f172a',
