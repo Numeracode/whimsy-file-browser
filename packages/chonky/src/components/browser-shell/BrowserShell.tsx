@@ -908,6 +908,7 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
                     onToggleSelection();
                 }
             }}
+            className={viewMode === 'grid' ? 'browser-grid-item' : undefined}
             role={viewMode === 'grid' ? 'gridcell' : 'listitem'}
             style={{
                 ...itemStyle,
@@ -935,14 +936,14 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
                     {item.source?.label ? ` · ${item.source.label}` : ''}
                 </span>
             </div>
-            <div style={styles.itemActions}>
+            <div className={viewMode === 'grid' ? 'browser-grid-item__actions' : undefined} style={styles.itemActions}>
                 {canPreview(item) ? (
-                    <button onClick={(event) => { event.stopPropagation(); onPreview(); }} style={styles.inlineButton} type="button">
+                    <button onClick={(event) => { event.stopPropagation(); onPreview(); }} style={viewMode === 'grid' ? styles.gridInlineButton : styles.inlineButton} type="button">
                         Preview
                     </button>
                 ) : null}
                 {canOpen(item) ? (
-                    <button onClick={(event) => { event.stopPropagation(); onOpen(); }} style={styles.inlineButton} type="button">
+                    <button onClick={(event) => { event.stopPropagation(); onOpen(); }} style={viewMode === 'grid' ? styles.gridInlineButton : styles.inlineButton} type="button">
                         Open
                     </button>
                 ) : null}
@@ -1077,6 +1078,14 @@ const styles: Record<string, CSSProperties> = {
         cursor: 'pointer',
         fontSize: 12,
         padding: '4px 8px',
+    },
+    gridInlineButton: {
+        background: 'transparent',
+        border: 0,
+        color: '#a3a3a3',
+        cursor: 'pointer',
+        fontSize: 11,
+        padding: '2px 4px',
     },
     itemActions: {
         alignItems: 'center',
