@@ -927,7 +927,7 @@ const BrowserShellItem: React.FC<BrowserShellItemProps> = (props) => {
             </div>
             <div style={styles.itemBody}>
                 {/* title exposes the full name when the label is truncated. */}
-                <span style={styles.itemName} title={item.name}>{item.name}</span>
+                <span style={viewMode === 'grid' ? styles.gridItemName : styles.itemName} title={item.name}>{item.name}</span>
                 <span style={styles.itemMeta}>
                     {item.kind === 'folder'
                         ? `${itemCountFormatter.format(item.childCount ?? 0)} ${item.childCount === 1 ? 'item' : 'items'}`
@@ -1047,9 +1047,9 @@ const styles: Record<string, CSSProperties> = {
     },
     grid: {
         display: 'grid',
-        gap: 12,
-        gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))',
-        padding: 12,
+        gap: 24,
+        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+        padding: 20,
     },
     gridItem: {
         alignItems: 'stretch',
@@ -1059,14 +1059,14 @@ const styles: Record<string, CSSProperties> = {
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 166,
+        minHeight: 190,
         overflow: 'hidden',
     },
     gridThumbnail: {
         alignItems: 'center',
         background: '#f8fafc',
         display: 'flex',
-        height: 92,
+        height: 100,
         justifyContent: 'center',
     },
     inlineButton: {
@@ -1090,7 +1090,7 @@ const styles: Record<string, CSSProperties> = {
         flexDirection: 'column',
         gap: 2,
         minWidth: 0,
-        padding: '8px 10px',
+        padding: '16px',
     },
     itemMeta: {
         color: '#64748b',
@@ -1106,6 +1106,19 @@ const styles: Record<string, CSSProperties> = {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
+    },
+    gridItemName: {
+        color: '#0f172a',
+        display: '-webkit-box',
+        fontSize: 13,
+        fontWeight: 600,
+        margin: '0 auto',
+        maxWidth: 120,
+        overflow: 'hidden',
+        textAlign: 'center',
+        WebkitBoxOrient: 'vertical',
+        WebkitLineClamp: 2,
+        wordBreak: 'break-all',
     },
     label: {
         alignItems: 'center',
